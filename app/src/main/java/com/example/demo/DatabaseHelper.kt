@@ -9,5 +9,5 @@ class DatabaseHelper {
     private var isConnect = false
     private lateinit var  rv : RecyclerView
     private  lateinit var query : String
-    private lateinit var adapter : RecyclerView.Adapter<DeviceAdapter>
+    //private lateinit var adapter : RecyclerView.Adapter<DeviceAdapter>
 }
