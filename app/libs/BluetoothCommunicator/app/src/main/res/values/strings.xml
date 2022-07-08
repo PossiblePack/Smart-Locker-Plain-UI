@@ -1,0 +1,51 @@
+<resources>
+    <string name="app_name">Bluetooth Communicator</string>
+
+    <!-- MainActivity トースト用 -->
+    <string name="bluetooth_is_not_supported">Bluetooth is not supported.</string>
+    <string name="bluetooth_is_not_working">Bluetooth is not working.</string>
+
+    <!-- MainActivity メニュー用 -->
+    <string name="search">Search</string>
+
+    <!-- MainActivity ラベル用 -->
+    <string name="sdkapiversion">Sdk API Version : </string>
+    <string name="device_address">Hardware Device Code : </string>
+    <string name="addAes">Add AES Key from file</string>
+    <string name="select_aes">Select AES Key</string>
+    <string name="select_token">Select Token</string>
+    <string name="connect">Connect</string>
+    <string name="disconnect">Disconnect</string>
+    <string name="select_unlockpass">Select Unlock Password</string>
+    <string name="lock">Lock</string>
+    <string name="unlock">Unlock</string>
+    <string name="getconfiguration">GetConfiguration</string>
+    <string name="select_cfg">Select Configration</string>
+    <string name="setconfiguration">SetConfiguration</string>
+    <string name="getdatetime">GetDateTime</string>
+    <string name="setdatetime">SetDateTime</string>
+    <string name="firmwarefileselect">FirmwareFileSelect</string>
+    <string name="updatefirmware">UpdateFirmware</string>
+    <string name="getbatterystatus">GetBatteryStatus</string>
+    <string name="getstatus">GetStatus</string>
+    <string name="isdooropened">IsDoorOpened</string>
+    <string name="islocked">IsLocked</string>
+    <string name="isdeleteevents">isDeleteEvents</string>
+    <string name="getevents">GetEvents</string>
+    <string name="deleteevents">DeleteEvents</string>
+    <string name="resetdevice">ResetDevice</string>
+    <string name="select_password">Select Password</string>
+    <string name="setpassword">SetPassword</string>
+    <string name="getpassword">GetPassword</string>
+    <string name="changekeyfileselect">ChangeKeyFileSelect</string>
+    <string name="changekey">ChangeKey</string>
+
+    <!-- DeviceListActivity トースト用 -->
+    <string name="unknown_device">Unknown device</string>
+
+    <!-- DeviceListActivity メニュー用 -->
+    <string name="menu">Menu</string>
+    <string name="scan">Scan</string>
+    <string name="stop">Stop</string>
+    <string name="back">Back</string>
+</resources>
