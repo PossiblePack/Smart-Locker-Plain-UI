@@ -6,6 +6,7 @@ import android.os.Handler;
 import android.os.Message;
 import android.view.View;
 
+import com.example.demo.DeviceDetailActivity;
 import com.example.demo.MainActivity;
 import com.example.demo.libs.Model.BoxException;
 import com.example.demo.libs.Model.Utility;
@@ -18,6 +19,7 @@ import java.util.Arrays;
 import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
+import com.example.demo.MainActivity;
 
 import static com.example.demo.libs.Model.DeviceListActivity.mTargetDevice;
 
@@ -62,7 +64,7 @@ public class JavaServices {
     // Handler
     final Handler mViewUpdateHandler = new Handler() {
         public void handleMessage(Message msg) {
-            buttonUpdateAll();
+            //buttonUpdateAll();
         }
     };
 
@@ -76,7 +78,7 @@ public class JavaServices {
             {
                 isConnect.set(select_device_no, true);
             }
-            buttonUpdateAll();
+            //buttonUpdateAll();
         }
     };
 
@@ -90,7 +92,7 @@ public class JavaServices {
             {
                 isConnect.set(select_device_no, false);
             }
-            buttonUpdateAll();
+            //buttonUpdateAll();
         }
     };
 
@@ -104,7 +106,7 @@ public class JavaServices {
             {
                 isLocked.set(select_device_no, false);
             }
-            buttonUpdateAll();
+            //buttonUpdateAll();
         }
     };
 
@@ -118,7 +120,7 @@ public class JavaServices {
             {
                 isLocked.set(select_device_no, true);
             }
-            buttonUpdateAll();
+            //buttonUpdateAll();
         }
     };
 
@@ -135,129 +137,6 @@ public class JavaServices {
         }
     };
 
-    @Override
-    public void onClick( View v )
-    {
-        if( mButton_Connect.getId() == v.getId() )
-        {
-            connect();
-            return;
-        }
-        if( mButton_Disconnect.getId() == v.getId() )
-        {
-            disconnect();
-            return;
-        }
-        if( mButton_Unlock.getId() == v.getId() )
-        {
-            unlock();
-            return;
-        }
-        if( mButton_Lock.getId() == v.getId() )
-        {
-            lock();
-            return;
-        }
-    }
-
-    private void buttonDisableAll()
-    {
-        mButton_Connect.setEnabled( false );
-        mButton_Disconnect.setEnabled( false );
-        mButton_Unlock.setEnabled( false );
-        mButton_Lock.setEnabled( false );
-    }
-
-    private void buttonUpdateAll()
-    {
-        if (select_device_no < 0)
-        {
-            buttonDisableAll();
-            return;
-        }
-        if (isUpdating.get(select_device_no)) {
-            buttonDisableAll();
-            return;
-        }
-        if (isCmdRunning.get(select_device_no)) {
-            buttonDisableAll();
-            return;
-        }
-        if (mTargetDevice.get(select_device_no) == null) {
-            buttonDisableAll();
-            return;
-        }
-        if (isConnect.get(select_device_no))
-        {
-            mButton_Connect.setEnabled( false );
-            mButton_Disconnect.setEnabled( true );
-            if (isLockUnknown.get(select_device_no))
-            {
-                mButton_Unlock.setEnabled( true );
-                mButton_Lock.setEnabled( true );
-            }
-            else if (isLocked.get(select_device_no))
-            {
-                mButton_Unlock.setEnabled( true );
-                mButton_Lock.setEnabled( false );
-            }
-            else
-            {
-                mButton_Unlock.setEnabled( false );
-                mButton_Lock.setEnabled( true );
-            }
-
-            mButton_GetBatteryStatus.setEnabled( true );
-            mTextView_retGetBatteryStatus.setText(retStringGetBatteryStatus.get(select_device_no));
-//            mButton_GetStatus.setEnabled( true );
-//            mTextView_retGetStatus.setText(retStringGetStatus.get(select_device_no));
-//            mButton_IsDoorOpened.setEnabled( true );
-//            mTextView_retIsDoorOpened.setText(retStringIsDoorOpened.get(select_device_no));
-//            mButton_IsLocked.setEnabled( true );
-//            mTextView_retIsLocked.setText(retStringIsLocked.get(select_device_no));
-//            mButton_GetEvents.setEnabled( true );
-//            mTextView_retGetEvents.setText(retStringGetEvents.get(select_device_no));
-//            mButton_DeleteEvents.setEnabled( true );
-//            mTextView_retDeleteEvents.setText(retStringDeleteEvents.get(select_device_no));
-//            mButton_ResetDevice.setEnabled( true );
-//            mButton_SetPassword.setEnabled( true );
-//            mButton_GetPassword.setEnabled( true );
-//            mTextView_retGetPassword.setText(retStringGetPassword.get(select_device_no));
-//            mButton_ChangeKey.setEnabled( true );
-        }
-        else
-        {
-            mButton_Connect.setEnabled( true );
-            mButton_Disconnect.setEnabled( true );
-            mButton_Unlock.setEnabled( false );
-            mButton_Lock.setEnabled( false );
-//            mButton_GetConfiguration.setEnabled( false );
-//            mTextView_retGetConfiguration.setText("");
-//            mButton_SetConfiguration.setEnabled( false );
-//            mButton_GetDateTime.setEnabled( false );
-//            mTextView_retGetDateTime.setText("");
-//            mButton_SetDateTime.setEnabled( false );
-//            mButton_UpdateFirmware.setEnabled( false );
-//            mButton_GetBatteryStatus.setEnabled( false );
-//            mTextView_retGetBatteryStatus.setText("");
-//            mButton_GetStatus.setEnabled( false );
-//            mTextView_retGetStatus.setText("");
-//            mButton_IsDoorOpened.setEnabled( false );
-//            mTextView_retIsDoorOpened.setText("");
-//            mButton_IsLocked.setEnabled( false );
-//            mTextView_retIsLocked.setText("");
-//            mButton_GetEvents.setEnabled( false );
-//            mTextView_retGetEvents.setText("");
-//            mButton_DeleteEvents.setEnabled( false );
-//            mTextView_retDeleteEvents.setText("");
-//            mButton_ResetDevice.setEnabled( false );
-//            mButton_SetPassword.setEnabled( false );
-//            mButton_GetPassword.setEnabled( false );
-//            mTextView_retGetPassword.setText("");
-//            mButton_ChangeKey.setEnabled( false );
-        }
-    }
-
 
     private void connect()
     {
@@ -267,7 +146,7 @@ public class JavaServices {
         }
 
         isConnect.set(select_device_no, false);
-        mButton_Connect.setEnabled( false );
+        //btnLock.setEnabled( false );
         isCmdRunning.set(select_device_no, true);
 
         mConnectThread = new ConnectThread();
@@ -276,13 +155,12 @@ public class JavaServices {
 
     private void disconnect()
     {
-        if( (select_device_no >= MainActivity.HardwareDeviceCode.size()) || (mButton_Disconnect.isEnabled() == false) )
+        if( (select_device_no >= HardwareDeviceCode.size())  )
         {
             return;
         }
 
         isConnect.set(select_device_no, false);
-        buttonDisableAll();
         isCmdRunning.set(select_device_no, true);
 
         mDisconnectThread = new DisconnectThread();
@@ -291,7 +169,6 @@ public class JavaServices {
 
     private void unlock()
     {
-        buttonDisableAll();
         isCmdRunning.set(select_device_no, true);
 
         mUnlockThread = new UnlockThread();
@@ -300,7 +177,6 @@ public class JavaServices {
 
     private void lock()
     {
-        buttonDisableAll();
         isCmdRunning.set(select_device_no, true);
 
         mLockThread = new LockThread();

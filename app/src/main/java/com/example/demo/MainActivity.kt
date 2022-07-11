@@ -60,6 +60,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     companion object {
+        lateinit var btsConnect: Thread
         lateinit var mErrorMessageHandler: Handler
     }
 }

@@ -21,6 +21,15 @@ class DeviceListActivity : AppCompatActivity() {
             intent.putExtra("HardwareDeviceCode",DeviceKeytext!!.text.toString())
             startActivity(intent)
         }
+
+//        if (mButton_Connect.getId() === v.id) {
+//            connect()
+//            return
+//        }
+//        if (mButton_Disconnect.getId() === v.id) {
+//            disconnect()
+//            return
+//        }
     }
 
 }
