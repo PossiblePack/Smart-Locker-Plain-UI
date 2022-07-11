@@ -3,9 +3,16 @@
   <component name="DesignSurface">
     <option name="filePathToZoomLevelMap">
       <map>
+        <entry key="..\:/Education/Cooperative/Project/DemoKotlin/app/src/main/res/layout/actionbar_indeterminate_progress.xml" value="0.2526041666666667" />
+        <entry key="..\:/Education/Cooperative/Project/DemoKotlin/app/src/main/res/layout/activity_device_list.xml" value="0.2526041666666667" />
+        <entry key="..\:/Education/Cooperative/Project/DemoKotlin/app/src/main/res/layout/activity_list_device.xml" value="0.2" />
         <entry key="..\:/Education/Cooperative/Project/DemoKotlin/app/src/main/res/layout/activity_locker_detail.xml" value="0.2526041666666667" />
         <entry key="..\:/Education/Cooperative/Project/DemoKotlin/app/src/main/res/layout/activity_main.xml" value="0.152" />
+        <entry key="..\:/Education/Cooperative/Project/DemoKotlin/app/src/main/res/layout/activity_test.xml" value="0.10461956521739131" />
         <entry key="..\:/Education/Cooperative/Project/DemoKotlin/app/src/main/res/layout/activity_user_detail.xml" value="0.2526041666666667" />
+        <entry key="..\:/Education/Cooperative/Project/DemoKotlin/app/src/main/res/layout/listitem_device.xml" value="0.2526041666666667" />
+        <entry key="..\:/Education/Cooperative/Project/DemoKotlin/app/src/main/res/menu/activity_device_list.xml" value="0.1671875" />
+        <entry key="..\:/Education/Cooperative/Project/DemoKotlin/app/src/main/res/menu/activity_main.xml" value="0.2526041666666667" />
         <entry key="..\:/Pack/Project/Panasonic-Locker/DemoKotlin/app/src/main/res/layout/activity_locker_detail.xml" value="0.1" />
         <entry key="..\:/Pack/Project/Panasonic-Locker/DemoKotlin/app/src/main/res/layout/activity_main.xml" value="0.22" />
         <entry key="..\:/Pack/Project/Panasonic-Locker/DemoKotlin/app/src/main/res/layout/activity_test.xml" value="0.22" />
@@ -13,7 +20,7 @@
       </map>
     </option>
   </component>
-  <component name="ProjectRootManager" version="2" languageLevel="JDK_17_PREVIEW" project-jdk-name="17" project-jdk-type="JavaSDK">
+  <component name="ProjectRootManager" version="2" languageLevel="JDK_16" project-jdk-name="17" project-jdk-type="JavaSDK">
     <output url="file://$PROJECT_DIR$/build/classes" />
   </component>
   <component name="ProjectType">

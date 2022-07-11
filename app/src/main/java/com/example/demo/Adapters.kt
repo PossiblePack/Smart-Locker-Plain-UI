@@ -34,7 +34,7 @@ class DeviceAdapter (val devices: ArrayList<Devices>) : RecyclerView.Adapter<Dev
 {
     class ViewHolder (ItemView: View) : RecyclerView.ViewHolder(ItemView){
         val textDeviceID = itemView.findViewById<TextView>(R.id.deviceIDText) as TextView
-        val textDeviceName = itemView.findViewById<TextView>(R.id.deviceNameText) as TextView
+        val textDeviceName = itemView.findViewById<TextView>(R.id.HardwareDeviceCode) as TextView
     }
 
     override fun onCreateViewHolder(p0: ViewGroup, p1: Int): DeviceAdapter.ViewHolder{

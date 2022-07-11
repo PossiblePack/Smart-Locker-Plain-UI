@@ -17,12 +17,12 @@ class Test : AppCompatActivity() {
     }
 
     fun TestDeviceOnclick(view: View){
-        var i = Intent(this, UserDetailActivity::class.java)
+        var i = Intent(this, DeviceListActivity::class.java)
         startActivity(i)
     }
 
     fun TestDeviceListOnclick(view: View){
-        var i = Intent(this, LockerDetailActivity::class.java)
+        var i = Intent(this, DeviceDetailActivity::class.java)
         startActivity(i)
     }
 }

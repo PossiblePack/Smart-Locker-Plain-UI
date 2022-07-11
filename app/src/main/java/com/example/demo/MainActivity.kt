@@ -1,9 +1,12 @@
 package com.example.demo
 
+import android.app.AlertDialog
 import android.content.Intent
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.os.Handler
+import android.os.Message
 import android.widget.Button
+import androidx.appcompat.app.AppCompatActivity
 import androidx.cardview.widget.CardView
 
 class MainActivity : AppCompatActivity() {
@@ -23,17 +26,17 @@ class MainActivity : AppCompatActivity() {
         test = findViewById<Button>(R.id.Testbutton)
 
         cardview1!!.setOnClickListener{
-            val intent = Intent(this,UserDetailActivity::class.java)
+            val intent = Intent(this,DeviceListActivity::class.java)
             intent.putExtra("lockerName","001")
             startActivity(intent)
         }
         cardview2!!.setOnClickListener{
-            val intent = Intent(this,UserDetailActivity::class.java)
+            val intent = Intent(this,DeviceListActivity::class.java)
             intent.putExtra("lockerName","002")
             startActivity(intent)
         }
         cardview3!!.setOnClickListener{
-            val intent = Intent(this,UserDetailActivity::class.java)
+            val intent = Intent(this,DeviceListActivity::class.java)
             intent.putExtra("lockerName","002")
             startActivity(intent)
         }
@@ -41,5 +44,22 @@ class MainActivity : AppCompatActivity() {
             val intent = Intent(this,Test::class.java)
             startActivity(intent)
         }
+
+        val mErrorMessageHandler: Handler = object : Handler() {
+            override fun handleMessage(msg: Message) {
+                val str = msg.obj as String
+                val builder = AlertDialog.Builder(this@MainActivity)
+                builder.setTitle("Error")
+                builder.setMessage(str)
+                builder.setPositiveButton("OK", null)
+                builder.show()
+            }
+        }
+
+
+    }
+
+    companion object {
+        lateinit var mErrorMessageHandler: Handler
     }
 }
