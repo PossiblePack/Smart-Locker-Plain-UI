@@ -1,3 +1,9 @@
 <resources>
     <string name="app_name">Demo</string>
+    <string name="bton">Bluetooth ON</string>
+    <string name="btoff">Bluetooth OFF</string>
+    <string name="btdiscover">Bluetooth Discover</string>
+    <string name="btpair">Bluetooth pair</string>
+    <string name="init">...</string>
+    <string name="btscan">Bluetooth Scan</string>
 </resources>

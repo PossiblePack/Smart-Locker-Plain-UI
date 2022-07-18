@@ -1,17 +1,15 @@
 package com.example.demo.libs;
 
-import android.app.AlertDialog;
+
 import android.app.ProgressDialog;
 import android.os.Handler;
 import android.os.Message;
-import android.view.View;
 
-import com.example.demo.DeviceDetailActivity;
-import com.example.demo.MainActivity;
 import com.example.demo.libs.Model.BoxException;
+import com.example.demo.libs.Model.BoxManager;
+import com.example.demo.libs.Model.DiscoverEventArgs;
 import com.example.demo.libs.Model.Utility;
 
-import java.io.File;
 import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -19,9 +17,6 @@ import java.util.Arrays;
 import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
-import com.example.demo.MainActivity;
-
-import static com.example.demo.libs.Model.DeviceListActivity.mTargetDevice;
 
 public class JavaServices {
     public static int select_aes_no = 0;
@@ -34,6 +29,17 @@ public class JavaServices {
     private LockThread              mLockThread;
     private GetBatteryStatusThread  mGetBatteryStatusThread;
 
+    //private DeviceListAdapter mDeviceListAdapter;
+    private boolean mScanning = false;
+
+    private BoxManager mBoxManager;
+
+    private ScanThread mScanThread;
+
+    public static ArrayList<DiscoverEventArgs> mTargetDevice = new ArrayList<>();
+
+
+
     // Status
     public static ArrayList<Boolean> isConnect = new ArrayList<>();
     public static ArrayList<Boolean> isLocked = new ArrayList<>();
@@ -45,6 +51,7 @@ public class JavaServices {
     private static final int REQUEST_CONNECTDEVICE = 1;
     private static final int TRUE  = 1;
     private static final int FALSE = 0;
+    public static final  String EXTRAS_DEVICE_ADDRESS   = "DEVICE_ADDRESS";
     public static ArrayList<String> HardwareDeviceCode = new ArrayList<>();
 
 
@@ -137,6 +144,22 @@ public class JavaServices {
         }
     };
 
+    private class ScanThread extends Thread {
+        public void run()
+        {
+            try {
+                mBoxManager.StartScanBoxControllers();
+            } catch (BoxException e) {
+                Message msg = new Message();
+                msg.obj = e.getMessage();
+                //MainActivity.mErrorMessageHandler.sendMessage(msg);
+            } catch (Exception e) {
+                Message msg = new Message();
+                msg.obj = e.getMessage();
+                //MainActivity.mErrorMessageHandler.sendMessage(msg);
+            }
+        }
+    }
 
     private void connect()
     {
@@ -201,97 +224,15 @@ public class JavaServices {
                 Message msg = new Message();
                 msg.obj = e.getMessage();
                 isCmdRunning.set(select_device_no, false);
-                MainActivity.mErrorMessageHandler.sendMessage(msg);
+                //MainActivity.mErrorMessageHandler.sendMessage(msg);
             } catch (Exception e) {
                 Message msg = new Message();
                 msg.obj = e.getMessage();
                 isCmdRunning.set(select_device_no, false);
-                MainActivity.mErrorMessageHandler.sendMessage(msg);
+                //MainActivity.mErrorMessageHandler.sendMessage(msg);
             }
 
             retStringGetBatteryStatus.set(select_device_no, retGetBatteryStatus.get(select_device_no) + "%");
-            isCmdRunning.set(select_device_no, false);
-            mViewUpdateHandler.sendEmptyMessage(TRUE);
-        }
-    }
-
-
-    private class ConnectThread extends Thread {
-        public void run() {
-            try {
-                Cipher encrypter;
-                byte[] token = {
-                        (byte)0x01, (byte)0x00, (byte)0x00, (byte)0x00, /* Token ID */
-                        (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00, /* - */
-                        (byte)0xFF, (byte)0xFF, (byte)0xFF, (byte)0xFF, /* Privilege */
-                        (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00  /* - */
-                };
-                byte[] cipheredTmp= new byte[32];
-                byte[] cipheredToken= new byte[16];
-                byte[] hashTokenByte= new byte[4];
-
-                IvParameterSpec iv = new IvParameterSpec(mIvKey.get(select_device_no));
-                SecretKeySpec key = new SecretKeySpec(mAesKey.get(select_aes_no), "AES");
-                encrypter = Cipher.getInstance("AES/CBC/PKCS5Padding");
-                encrypter.init(Cipher.ENCRYPT_MODE, key, iv);
-                cipheredTmp = encrypter.doFinal(token);
-                for (int i = 0; i < 16; i++) {
-                    cipheredToken[i] = cipheredTmp[i];
-                }
-
-                byte[] sha256 = MessageDigest.getInstance("SHA-256").digest(token);
-                for (int i = 0; i < 4; i++) {
-                    hashTokenByte[i] = sha256[28 + i];
-                }
-
-                int hashToken = 0;
-                if (hashTokenByte != null) {
-                    hashToken = Utility.ToInt32(hashTokenByte, 0);
-                }
-
-                isLockUnknown.set(select_device_no, true);
-                mTargetDevice.get(select_device_no).box.Connect(cipheredToken, hashToken);
-
-            } catch (BoxException e) {
-                Message msg = new Message();
-                msg.obj = e.getMessage();
-                MainActivity.mErrorMessageHandler.sendMessage(msg);
-                isConnect.set(select_device_no, false);
-                isCmdRunning.set(select_device_no, false);
-                mButtonConnectEnableChangeHandler.sendEmptyMessage(TRUE);
-            } catch (Exception e) {
-                Message msg = new Message();
-                msg.obj = e.getMessage();
-                MainActivity.mErrorMessageHandler.sendMessage(msg);
-                isConnect.set(select_device_no, false);
-                isCmdRunning.set(select_device_no, false);
-                mButtonConnectEnableChangeHandler.sendEmptyMessage(TRUE);
-            }
-            isConnect.set(select_device_no, true);
-            isCmdRunning.set(select_device_no, false);
-            mViewUpdateHandler.sendEmptyMessage(TRUE);
-        }
-    }
-
-    private class DisconnectThread extends Thread {
-        public void run()
-        {
-            isLockUnknown.set(select_device_no, true);
-            try {
-                mTargetDevice.get(select_device_no).box.Disconnect();
-            } catch (BoxException e) {
-                Message msg = new Message();
-                msg.obj = e.getMessage();
-                isCmdRunning.set(select_device_no, false);
-                MainActivity.mErrorMessageHandler.sendMessage(msg);
-            } catch (Exception e) {
-                Message msg = new Message();
-                msg.obj = e.getMessage();
-                isCmdRunning.set(select_device_no, false);
-                MainActivity.mErrorMessageHandler.sendMessage(msg);
-            }
-
-            isConnect.set(select_device_no, false);
             isCmdRunning.set(select_device_no, false);
             mViewUpdateHandler.sendEmptyMessage(TRUE);
         }
@@ -306,8 +247,15 @@ public class JavaServices {
                 byte[][] hashPasswordByte = new byte[10][4];
                 boolean isSetPassword = true;
                 passwordTmp[0] = new String("0").getBytes();
-
-
+                passwordTmp[1] = new String("1").getBytes();
+                passwordTmp[2] = new String("2").getBytes();
+                passwordTmp[3] = new String("3").getBytes();
+                passwordTmp[4] = new String("4").getBytes();
+                passwordTmp[5] = new String("5").getBytes();
+                passwordTmp[6] = new String("6").getBytes();
+                passwordTmp[7] = new String("7").getBytes();
+                passwordTmp[8] = new String("8").getBytes();
+                passwordTmp[9] = new String("9").getBytes();
                 Integer[] hashPassword = new Integer[10];
                 if (hashPasswordByte != null) {
                     for (int j = 0; j < 10; j++) {
@@ -359,13 +307,13 @@ public class JavaServices {
                 Message msg = new Message();
                 msg.obj = e.getMessage();
                 isCmdRunning.set(select_device_no, false);
-                MainActivity.mErrorMessageHandler.sendMessage(msg);
+                //MainActivity.mErrorMessageHandler.sendMessage(msg);
             } catch (Exception e) {
                 isLockUnknown.set(select_device_no, true);
                 Message msg = new Message();
                 msg.obj = e.getMessage();
                 isCmdRunning.set(select_device_no, false);
-                MainActivity.mErrorMessageHandler.sendMessage(msg);
+                //MainActivity.mErrorMessageHandler.sendMessage(msg);
             }
 
             isCmdRunning.set(select_device_no, false);
@@ -383,13 +331,13 @@ public class JavaServices {
                 Message msg = new Message();
                 msg.obj = e.getMessage();
                 isCmdRunning.set(select_device_no, false);
-                MainActivity.mErrorMessageHandler.sendMessage(msg);
+                //MainActivity.mErrorMessageHandler.sendMessage(msg);
             } catch (Exception e) {
                 isLockUnknown.set(select_device_no, true);
                 Message msg = new Message();
                 msg.obj = e.getMessage();
                 isCmdRunning.set(select_device_no, false);
-                MainActivity.mErrorMessageHandler.sendMessage(msg);
+                //MainActivity.mErrorMessageHandler.sendMessage(msg);
             }
 
             isCmdRunning.set(select_device_no, false);
@@ -397,4 +345,88 @@ public class JavaServices {
         }
     }
 
+
+    private class ConnectThread extends Thread {
+        public void run() {
+            try {
+                Cipher encrypter;
+                byte[] token = {
+                        (byte)0x01, (byte)0x00, (byte)0x00, (byte)0x00, /* Token ID */
+                        (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00, /* - */
+                        (byte)0xFF, (byte)0xFF, (byte)0xFF, (byte)0xFF, /* Privilege */
+                        (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00  /* - */
+                };
+                byte[] cipheredTmp= new byte[32];
+                byte[] cipheredToken= new byte[16];
+                byte[] hashTokenByte= new byte[4];
+
+                IvParameterSpec iv = new IvParameterSpec(mIvKey.get(select_device_no));
+                SecretKeySpec key = new SecretKeySpec(mAesKey.get(select_aes_no), "AES");
+                encrypter = Cipher.getInstance("AES/CBC/PKCS5Padding");
+                encrypter.init(Cipher.ENCRYPT_MODE, key, iv);
+                cipheredTmp = encrypter.doFinal(token);
+                for (int i = 0; i < 16; i++) {
+                    cipheredToken[i] = cipheredTmp[i];
+                }
+
+                byte[] sha256 = MessageDigest.getInstance("SHA-256").digest(token);
+                for (int i = 0; i < 4; i++) {
+                    hashTokenByte[i] = sha256[28 + i];
+                }
+
+                int hashToken = 0;
+                if (hashTokenByte != null) {
+                    hashToken = Utility.ToInt32(hashTokenByte, 0);
+                }
+
+                isLockUnknown.set(select_device_no, true);
+                mTargetDevice.get(select_device_no).box.Connect(cipheredToken, hashToken);
+
+            } catch (BoxException e) {
+                Message msg = new Message();
+                msg.obj = e.getMessage();
+                //MainActivity.mErrorMessageHandler.sendMessage(msg);
+                isConnect.set(select_device_no, false);
+                isCmdRunning.set(select_device_no, false);
+                mButtonConnectEnableChangeHandler.sendEmptyMessage(TRUE);
+            } catch (Exception e) {
+                Message msg = new Message();
+                msg.obj = e.getMessage();
+                //MainActivity.mErrorMessageHandler.sendMessage(msg);
+                isConnect.set(select_device_no, false);
+                isCmdRunning.set(select_device_no, false);
+                mButtonConnectEnableChangeHandler.sendEmptyMessage(TRUE);
+            }
+            isConnect.set(select_device_no, true);
+            isCmdRunning.set(select_device_no, false);
+            mViewUpdateHandler.sendEmptyMessage(TRUE);
+        }
+    }
+
+    private class DisconnectThread extends Thread {
+        public void run()
+        {
+            isLockUnknown.set(select_device_no, true);
+            try {
+                mTargetDevice.get(select_device_no).box.Disconnect();
+            } catch (BoxException e) {
+                Message msg = new Message();
+                msg.obj = e.getMessage();
+                isCmdRunning.set(select_device_no, false);
+                //MainActivity.mErrorMessageHandler.sendMessage(msg);
+            } catch (Exception e) {
+                Message msg = new Message();
+                msg.obj = e.getMessage();
+                isCmdRunning.set(select_device_no, false);
+                //MainActivity.mErrorMessageHandler.sendMessage(msg);
+            }
+
+            isConnect.set(select_device_no, false);
+            isCmdRunning.set(select_device_no, false);
+            mViewUpdateHandler.sendEmptyMessage(TRUE);
+        }
+    }
+
+
 }
+
