@@ -26,13 +26,6 @@ class BluetoothDeviceActivity : AppCompatActivity() {
     var pairbtn: Button? = null
     var scanbtn: Button? = null
 
-//    private val bluetoothLeScanner = bluetoothAdapter.bluetoothLeScanner
-//    private var scanning = false
-//    private val handler = Handler()
-
-    //private val leDeviceListAdapter = LeDeviceListAdapter
-
-//    private val SCAN_PERIOD: Long = 10000
     private val REQUEST_CODE_ENABLE_BT: Int = 1
     private val REQUEST_CODE_DISCOVERABLE_BT: Int = 1
 
@@ -76,7 +69,6 @@ class BluetoothDeviceActivity : AppCompatActivity() {
             } else {
                 val intent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
                 startActivityForResult(intent, REQUEST_CODE_ENABLE_BT)
-                status!!.text = "On"
             }
         }
 
@@ -91,8 +83,8 @@ class BluetoothDeviceActivity : AppCompatActivity() {
                 ) {                                                    /////////////////////////////////////////
                 }                                                      ///////////permission check//////////////
                 bluetoothAdapter.disable()
-                status!!.text = "Off"
                 Toast.makeText(this, "Bluetooth is off", Toast.LENGTH_SHORT).show()
+                status!!.text = "Off"
             }
         }
 
@@ -130,49 +122,12 @@ class BluetoothDeviceActivity : AppCompatActivity() {
 
     }
 
-//    private val leScanCallback: ScanCallback = object : ScanCallback() {
-//        override fun onScanResult(callbackType: Int, result: ScanResult) {
-//            super.onScanResult(callbackType, result)
-//            leDeviceListAdapter.addDevice(result.device)
-//            leDeviceListAdapter.notifyDataSetChanged()
-//        }
-//    }
-//
-//    private fun scanLeDevice() {
-//        if (!scanning) {
-//            // Stops scanning after a predefined scan period.
-//            handler.postDelayed({
-//                scanning = false
-//                if (ActivityCompat.checkSelfPermission(
-//                        this,
-//                        Manifest.permission.BLUETOOTH_SCAN
-//                    ) != PackageManager.PERMISSION_GRANTED
-//                ) {
-//                    // TODO: Consider calling
-//                    //    ActivityCompat#requestPermissions
-//                    // here to request the missing permissions, and then overriding
-//                    //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-//                    //                                          int[] grantResults)
-//                    // to handle the case where the user grants the permission. See the documentation
-//                    // for ActivityCompat#requestPermissions for more details.
-//                }
-//                bluetoothLeScanner.stopScan(leScanCallback)
-//            }, SCAN_PERIOD)
-//            scanning = true
-//            bluetoothLeScanner.startScan(leScanCallback)
-//        } else {
-//            scanning = false
-//            bluetoothLeScanner.stopScan(leScanCallback)
-//        }
-//    }
-
-
-
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         when(requestCode){
             REQUEST_CODE_ENABLE_BT ->
                 if (resultCode == Activity.RESULT_OK){
                     Toast.makeText(this, "Bluetooth is on", Toast.LENGTH_SHORT).show()
+                    status!!.text = "On"
                 }
                 else{
                     Toast.makeText(this, "Could not on Bluetooth", Toast.LENGTH_SHORT).show()
