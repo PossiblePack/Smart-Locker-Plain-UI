@@ -6,4 +6,6 @@
     <string name="btpair">Bluetooth pair</string>
     <string name="init">...</string>
     <string name="btscan">Bluetooth Scan</string>
+    <string name="paired_title">Paired List</string>
+    <string name="scan_title">Scan device result List</string>
 </resources>

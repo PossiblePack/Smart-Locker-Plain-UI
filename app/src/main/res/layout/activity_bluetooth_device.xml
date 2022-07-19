@@ -7,7 +7,7 @@
     tools:context=".BluetoothDeviceActivity">
 
     <TextView
-        android:id="@+id/txt"
+        android:id="@+id/txttitle"
         android:textAlignment="center"
         android:paddingTop="10dp"
         android:textColor="@color/black"
@@ -23,12 +23,13 @@
         android:textAlignment="center"
         android:paddingTop="10dp"
         android:textColor="@color/black"
+        android:textSize="20sp"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="@string/init"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/txt" />
+        app:layout_constraintTop_toBottomOf="@id/txttitle" />
 
 
     <Button
@@ -51,22 +52,13 @@
         app:layout_constraintTop_toBottomOf="@id/btnBTon" />
 
     <Button
-        android:id="@+id/btnBTdiscover"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/btdiscover"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/btnBToff" />
-
-    <Button
         android:id="@+id/btnBTpair"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/btpair"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/btnBTdiscover" />
+        app:layout_constraintTop_toBottomOf="@id/btnBToff" /> />
 
     <Button
         android:id="@+id/btnBTscan"
@@ -78,7 +70,19 @@
         app:layout_constraintTop_toBottomOf="@id/btnBTpair" />
 
     <TextView
-        android:id="@+id/pairedList"
+        android:id="@+id/pairtitle"
+        android:textAlignment="center"
+        android:paddingTop="10dp"
+        android:textColor="@color/black"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/paired_title"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/btnBTscan" />
+
+    <TextView
+        android:id="@+id/pairList"
         android:textAlignment="center"
         android:paddingTop="10dp"
         android:textColor="@color/black"
@@ -87,5 +91,30 @@
         android:text="@string/init"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/btnBTscan" />
+        app:layout_constraintTop_toBottomOf="@id/pairtitle" />
+
+    <TextView
+        android:id="@+id/scanTitle"
+        android:textAlignment="center"
+        android:paddingTop="10dp"
+        android:textColor="@color/black"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/scan_title"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/pairList" />
+
+    <TextView
+        android:id="@+id/scanList"
+        android:textAlignment="center"
+        android:paddingTop="10dp"
+        android:textColor="@color/black"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/init"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/scanTitle" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -3,12 +3,18 @@ package com.example.demo
 import android.Manifest
 import android.app.Activity
 import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothClass
+import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothManager
 import android.bluetooth.le.ScanCallback
+import android.bluetooth.le.ScanFilter
 import android.bluetooth.le.ScanResult
+import android.bluetooth.le.ScanSettings
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.os.Handler
+import android.util.Log
 import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
@@ -17,18 +23,25 @@ import androidx.core.app.ActivityCompat
 
 class BluetoothDeviceActivity : AppCompatActivity() {
 
-    lateinit var bluetoothAdapter: BluetoothAdapter
+    private val bluetoothAdapter: BluetoothAdapter by lazy{
+        (getSystemService(BLUETOOTH_SERVICE) as BluetoothManager).adapter
+    }
+
     var status: TextView? = null
     var listpaired: TextView? = null
+    var listscan: TextView? = null
     var onbtn: Button? = null
     var offbtn: Button? = null
-    var discoverbtn: Button? = null
-    var pairbtn: Button? = null
+    var pairedbtn: Button? = null
     var scanbtn: Button? = null
 
     private val REQUEST_CODE_ENABLE_BT: Int = 1
-    private val REQUEST_CODE_DISCOVERABLE_BT: Int = 1
 
+    private val leDeviceListAdapter = LeDeviceListAdapter()
+
+    class LeDeviceListAdapter {
+
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -40,21 +53,22 @@ class BluetoothDeviceActivity : AppCompatActivity() {
             finish();
         }
 
-        bluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
+
+        //bluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
 
         if (bluetoothAdapter == null) {
-            Toast.makeText(this, "error_bluetooth_not_supported", Toast.LENGTH_SHORT).show();
-            finish();
-            return;
+            Toast.makeText(this, "error_bluetooth_not_supported", Toast.LENGTH_SHORT).show()
+            finish()
+            return
         }
 
         //find view
         status = findViewById<TextView>(R.id.txtBTstatus)
-        listpaired = findViewById<TextView>(R.id.pairedList)
+        listpaired = findViewById<TextView>(R.id.pairList)
+        listscan = findViewById<TextView>(R.id.scanList)
         onbtn = findViewById<Button>(R.id.btnBTon)
         offbtn = findViewById<Button>(R.id.btnBToff)
-        discoverbtn = findViewById<Button>(R.id.btnBTdiscover)
-        pairbtn = findViewById<Button>(R.id.btnBTpair)
+        pairedbtn = findViewById<Button>(R.id.btnBTpair)
         scanbtn = findViewById<Button>(R.id.btnBTscan)
 
         if(bluetoothAdapter.isEnabled){
@@ -88,15 +102,7 @@ class BluetoothDeviceActivity : AppCompatActivity() {
             }
         }
 
-        discoverbtn!!.setOnClickListener {
-            if (!bluetoothAdapter.isDiscovering) {
-                Toast.makeText(this, "Making your device discover", Toast.LENGTH_SHORT).show()
-                val intent = Intent(Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE))
-                startActivityForResult(intent, REQUEST_CODE_DISCOVERABLE_BT)
-            }
-        }
-
-        pairbtn!!.setOnClickListener {
+        pairedbtn!!.setOnClickListener {
             if (bluetoothAdapter.isEnabled) {
                 listpaired!!.text = "Paired Devices"
                 val devices = bluetoothAdapter.bondedDevices
@@ -112,29 +118,77 @@ class BluetoothDeviceActivity : AppCompatActivity() {
         }
 
         scanbtn!!.setOnClickListener {
-            if(bluetoothAdapter.isEnabled){
-
-            }else{
+            if (bluetoothAdapter.isEnabled) {
+                //Toast.makeText(this, "Start scan ", Toast.LENGTH_SHORT).show()
+                scanLeDevice()
+            } else {
                 Toast.makeText(this, "Please turn on Bluetooth first", Toast.LENGTH_SHORT).show()
             }
         }
-
-
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        when(requestCode){
-            REQUEST_CODE_ENABLE_BT ->
-                if (resultCode == Activity.RESULT_OK){
-                    Toast.makeText(this, "Bluetooth is on", Toast.LENGTH_SHORT).show()
-                    status!!.text = "On"
-                }
-                else{
-                    Toast.makeText(this, "Could not on Bluetooth", Toast.LENGTH_SHORT).show()
-                }
-        }
+
+        if(requestCode == REQUEST_CODE_ENABLE_BT){
+            if (resultCode == Activity.RESULT_OK){
+                Toast.makeText(this, "Bluetooth is on", Toast.LENGTH_SHORT).show()
+                status!!.text = "On"
+            }
+            else{
+                Toast.makeText(this, "Could not on Bluetooth", Toast.LENGTH_SHORT).show()
+            }
+
         super.onActivityResult(requestCode, resultCode, data)
+        }
     }
+
+    override fun onResume() {
+        super.onResume()
+        if(bluetoothAdapter.isEnabled){
+            //startBLEScan()
+            //scanLeDevice()
+        }else{
+            Toast.makeText(this, "Plase turn on your bluetooth first", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private var scanning = false
+    private val handler = Handler()
+    val list : ArrayList<BluetoothDevice> = ArrayList()
+
+    // Stops scanning after 10 seconds.
+    private val SCAN_PERIOD: Long = 10000
+
+    private fun scanLeDevice() {
+        if (!scanning) { // Stops scanning after a pre-defined scan period.
+            handler.postDelayed({
+                scanning = false
+                if (ActivityCompat.checkSelfPermission(
+                        this,
+                        Manifest.permission.BLUETOOTH_SCAN
+                    ) != PackageManager.PERMISSION_GRANTED
+                ) {
+                }
+                bluetoothAdapter.bluetoothLeScanner.stopScan(leScanCallback)
+            }, SCAN_PERIOD)
+            scanning = true
+            bluetoothAdapter.bluetoothLeScanner.startScan(leScanCallback)
+        } else {
+            scanning = false
+            bluetoothAdapter.bluetoothLeScanner.stopScan(leScanCallback)
+        }
+    }
+
+
+    private val leScanCallback: ScanCallback = object : ScanCallback() {
+        override fun onScanResult(callbackType: Int, result: ScanResult) {
+            super.onScanResult(callbackType, result)
+            list.add(result.device)
+            //leDeviceListAdapter.notifyDataSetChanged()
+            //Log.d("onScanResult:", "${result.device}")
+        }
+    }
+
 
 
 }
