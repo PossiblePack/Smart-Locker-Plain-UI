@@ -3,13 +3,10 @@ package com.example.demo
 import android.Manifest
 import android.app.Activity
 import android.bluetooth.BluetoothAdapter
-import android.bluetooth.BluetoothClass
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothManager
 import android.bluetooth.le.ScanCallback
-import android.bluetooth.le.ScanFilter
 import android.bluetooth.le.ScanResult
-import android.bluetooth.le.ScanSettings
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
@@ -36,8 +33,14 @@ class BluetoothDeviceActivity : AppCompatActivity() {
     var scanbtn: Button? = null
 
     private val REQUEST_CODE_ENABLE_BT: Int = 1
+    private var scanning = false
+    private val handler = Handler()
+    val list : ArrayList<BluetoothDevice> = ArrayList()
 
-    private val leDeviceListAdapter = LeDeviceListAdapter()
+    // Stops scanning after 10 seconds.
+    private val SCAN_PERIOD: Long = 10000
+
+    //private val leDeviceListAdapter = LeDeviceListAdapter()
 
     class LeDeviceListAdapter {
 
@@ -49,12 +52,9 @@ class BluetoothDeviceActivity : AppCompatActivity() {
         //actionBar!!.title = "Bluetooth"
 
         if (!packageManager.hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)) {
-            Toast.makeText(this, "ble_not_supported.", Toast.LENGTH_SHORT).show();
-            finish();
+            Toast.makeText(this, "ble_not_supported.", Toast.LENGTH_SHORT).show()
+            finish()
         }
-
-
-        //bluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
 
         if (bluetoothAdapter == null) {
             Toast.makeText(this, "error_bluetooth_not_supported", Toast.LENGTH_SHORT).show()
@@ -108,9 +108,8 @@ class BluetoothDeviceActivity : AppCompatActivity() {
                 val devices = bluetoothAdapter.bondedDevices
                 for (device in devices){
                     val deviceName = device.name
-                    val deviceType = device.type
-                    val deviceAddress = device.address
-                    listpaired!!.append("\nDevice: Name: $deviceName, Type $deviceType , $deviceAddress")
+                    val deviceAddress = device.uuids
+                    listpaired!!.append("\nDevice: Name: $deviceName, $deviceAddress")
                 }
             } else {
                 Toast.makeText(this, "Please turn on Bluetooth first", Toast.LENGTH_SHORT).show()
@@ -119,11 +118,20 @@ class BluetoothDeviceActivity : AppCompatActivity() {
 
         scanbtn!!.setOnClickListener {
             if (bluetoothAdapter.isEnabled) {
-                //Toast.makeText(this, "Start scan ", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Start scan ", Toast.LENGTH_SHORT).show()
                 scanLeDevice()
             } else {
                 Toast.makeText(this, "Please turn on Bluetooth first", Toast.LENGTH_SHORT).show()
             }
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (list==null){
+            listscan!!.text = ""
+        }else{
+            listscan!!.text = list.toString()
         }
     }
 
@@ -141,23 +149,6 @@ class BluetoothDeviceActivity : AppCompatActivity() {
         super.onActivityResult(requestCode, resultCode, data)
         }
     }
-
-    override fun onResume() {
-        super.onResume()
-        if(bluetoothAdapter.isEnabled){
-            //startBLEScan()
-            //scanLeDevice()
-        }else{
-            Toast.makeText(this, "Plase turn on your bluetooth first", Toast.LENGTH_SHORT).show()
-        }
-    }
-
-    private var scanning = false
-    private val handler = Handler()
-    val list : ArrayList<BluetoothDevice> = ArrayList()
-
-    // Stops scanning after 10 seconds.
-    private val SCAN_PERIOD: Long = 10000
 
     private fun scanLeDevice() {
         if (!scanning) { // Stops scanning after a pre-defined scan period.
@@ -183,9 +174,13 @@ class BluetoothDeviceActivity : AppCompatActivity() {
     private val leScanCallback: ScanCallback = object : ScanCallback() {
         override fun onScanResult(callbackType: Int, result: ScanResult) {
             super.onScanResult(callbackType, result)
-            list.add(result.device)
+            val devices = result?.device
+
             //leDeviceListAdapter.notifyDataSetChanged()
-            //Log.d("onScanResult:", "${result.device}")
+            //Log.e("onScanResult:", "${device}")
+
+            devices?.let { list.add( it) }
+            listscan!!.text = list.toString() //show in view
         }
     }
 
