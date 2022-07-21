@@ -3,7 +3,6 @@ package com.example.demo
 import android.Manifest
 import android.app.Activity
 import android.bluetooth.BluetoothAdapter
-import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothManager
 import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanResult
@@ -11,12 +10,14 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.os.Handler
-import android.util.Log
 import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
+import com.example.demo.libs.Model.BleAccess
+import com.example.demo.libs.Model.BoxManager
+import java.util.*
 
 class BluetoothDeviceActivity : AppCompatActivity() {
 
@@ -35,7 +36,6 @@ class BluetoothDeviceActivity : AppCompatActivity() {
     private val REQUEST_CODE_ENABLE_BT: Int = 1
     private var scanning = false
     private val handler = Handler()
-    val list : ArrayList<BluetoothDevice> = ArrayList()
 
     // Stops scanning after 10 seconds.
     private val SCAN_PERIOD: Long = 10000
@@ -119,21 +119,14 @@ class BluetoothDeviceActivity : AppCompatActivity() {
         scanbtn!!.setOnClickListener {
             if (bluetoothAdapter.isEnabled) {
                 Toast.makeText(this, "Start scan ", Toast.LENGTH_SHORT).show()
-                scanLeDevice()
+//                scanLeDevice()
+
             } else {
                 Toast.makeText(this, "Please turn on Bluetooth first", Toast.LENGTH_SHORT).show()
             }
         }
     }
 
-    override fun onResume() {
-        super.onResume()
-        if (list==null){
-            listscan!!.text = ""
-        }else{
-            listscan!!.text = list.toString()
-        }
-    }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
 
@@ -178,9 +171,11 @@ class BluetoothDeviceActivity : AppCompatActivity() {
 
             //leDeviceListAdapter.notifyDataSetChanged()
             //Log.e("onScanResult:", "${device}")
-
-            devices?.let { list.add( it) }
-            listscan!!.text = list.toString() //show in view
+            val device = result.device
+            val rssi = result.rssi
+            val scanRecord = result.scanRecord!!.bytes
+            BleAccess.onScanSub(device, rssi, scanRecord)
+            //var response = BleAccess.onScanSub(device, rssi, scanRecord)
         }
     }
 

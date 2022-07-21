@@ -1,6 +1,7 @@
 package com.example.demo.libs;
 
 
+import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.os.Handler;
 import android.os.Message;
@@ -144,7 +145,7 @@ public class JavaServices {
         }
     };
 
-    private class ScanThread extends Thread {
+    private class  ScanThread extends Thread {
         public void run()
         {
             try {
@@ -426,6 +427,8 @@ public class JavaServices {
             mViewUpdateHandler.sendEmptyMessage(TRUE);
         }
     }
+
+
 
 
 }
