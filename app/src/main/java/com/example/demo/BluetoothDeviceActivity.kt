@@ -3,6 +3,8 @@ package com.example.demo
 import android.Manifest
 import android.app.Activity
 import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothAdapter.LeScanCallback
+import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothManager
 import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanResult
@@ -10,20 +12,26 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.os.Handler
+import android.util.Log
+import android.view.Menu
 import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import com.example.demo.libs.Model.BleAccess
+import com.example.demo.libs.Model.BleLog
+import com.example.demo.libs.Model.BoxException
 import com.example.demo.libs.Model.BoxManager
-import java.util.*
 
 class BluetoothDeviceActivity : AppCompatActivity() {
 
     private val bluetoothAdapter: BluetoothAdapter by lazy{
         (getSystemService(BLUETOOTH_SERVICE) as BluetoothManager).adapter
     }
+
+    private val LOG_TAG = "SLSDK"
+    private val LOG_CLASS = "[BleAccess]"
 
     var status: TextView? = null
     var listpaired: TextView? = null
@@ -40,16 +48,14 @@ class BluetoothDeviceActivity : AppCompatActivity() {
     // Stops scanning after 10 seconds.
     private val SCAN_PERIOD: Long = 10000
 
-    //private val leDeviceListAdapter = LeDeviceListAdapter()
-
-    class LeDeviceListAdapter {
-
-    }
+    private val bleAccess: BleAccess? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_bluetooth_device)
         //actionBar!!.title = "Bluetooth"
+
+        var mBoxManager = BoxManager(applicationContext)
 
         if (!packageManager.hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)) {
             Toast.makeText(this, "ble_not_supported.", Toast.LENGTH_SHORT).show()
@@ -70,6 +76,24 @@ class BluetoothDeviceActivity : AppCompatActivity() {
         offbtn = findViewById<Button>(R.id.btnBToff)
         pairedbtn = findViewById<Button>(R.id.btnBTpair)
         scanbtn = findViewById<Button>(R.id.btnBTscan)
+
+        class ViewHolder {
+            var hardwareDeviceCode: TextView? = null
+            var type: TextView? = null
+            var firmVersion: TextView? = null
+            var remainingBattery: TextView? = null
+            var isDoorOpen: TextView? = null
+            var isLockLock: TextView? = null
+            var isTooMuchEvent: TextView? = null
+            var isPasswordSet: TextView? = null
+            var passwordNum: TextView? = null
+        }
+
+        fun onCreateOptionsMenu(menu: Menu): Boolean {
+            menuInflater.inflate(R.menu.activity_device_list, menu)
+            menu.findItem(R.id.menuitem_back).isVisible = true
+            return true
+        }
 
         if(bluetoothAdapter.isEnabled){
             status!!.text = "On"
@@ -119,8 +143,8 @@ class BluetoothDeviceActivity : AppCompatActivity() {
         scanbtn!!.setOnClickListener {
             if (bluetoothAdapter.isEnabled) {
                 Toast.makeText(this, "Start scan ", Toast.LENGTH_SHORT).show()
-//                scanLeDevice()
-
+                scanLeDevice()
+                //mBoxManager.StartScanBoxControllers()
             } else {
                 Toast.makeText(this, "Please turn on Bluetooth first", Toast.LENGTH_SHORT).show()
             }
@@ -143,6 +167,23 @@ class BluetoothDeviceActivity : AppCompatActivity() {
         }
     }
 
+    @Throws(BoxException::class)
+    fun StartScanBoxControllers(timeout: Int) {
+        BleLog.d(
+            LOG_TAG,
+            LOG_CLASS + "[StartScanBoxControllers] timeout=" + timeout
+        )
+
+        /*Start scanning*/
+        bleAccess!!.Scan(timeout)
+    }
+
+    @Throws(BoxException::class)
+    fun StopScanBoxControllers() {
+        BleLog.d(LOG_TAG, LOG_CLASS + "[StopScanBoxControllers]")
+        bleAccess!!.StopScan()
+    }
+
     private fun scanLeDevice() {
         if (!scanning) { // Stops scanning after a pre-defined scan period.
             handler.postDelayed({
@@ -163,22 +204,25 @@ class BluetoothDeviceActivity : AppCompatActivity() {
         }
     }
 
+    private val mLeScanCallback =
+        LeScanCallback { device, rssi, scanRecord -> BleAccess.onScanSub(device, rssi, scanRecord) }
+
+    //val list: MutableList<Int> = mutableListOf(1, 2, 3)
+    var list: MutableList<BluetoothDevice> = mutableListOf()
 
     private val leScanCallback: ScanCallback = object : ScanCallback() {
         override fun onScanResult(callbackType: Int, result: ScanResult) {
             super.onScanResult(callbackType, result)
-            val devices = result?.device
-
-            //leDeviceListAdapter.notifyDataSetChanged()
-            //Log.e("onScanResult:", "${device}")
             val device = result.device
             val rssi = result.rssi
             val scanRecord = result.scanRecord!!.bytes
             BleAccess.onScanSub(device, rssi, scanRecord)
-            //var response = BleAccess.onScanSub(device, rssi, scanRecord)
+
+            //test
+            list.add(device)
+            val listDevice = list.toSet().toList();
+            Log.d("device list: ", listDevice.toString())
         }
     }
-
-
 
 }
