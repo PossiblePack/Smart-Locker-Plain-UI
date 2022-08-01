@@ -3,7 +3,6 @@ package com.example.demo
 import android.Manifest
 import android.app.Activity
 import android.bluetooth.BluetoothAdapter
-import android.bluetooth.BluetoothAdapter.LeScanCallback
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothManager
 import android.bluetooth.le.ScanCallback
@@ -23,6 +22,7 @@ import com.example.demo.libs.Model.BleAccess
 import com.example.demo.libs.Model.BleLog
 import com.example.demo.libs.Model.BoxException
 import com.example.demo.libs.Model.BoxManager
+import java.util.*
 
 class BluetoothDeviceActivity : AppCompatActivity() {
 
@@ -40,6 +40,7 @@ class BluetoothDeviceActivity : AppCompatActivity() {
     var offbtn: Button? = null
     var pairedbtn: Button? = null
     var scanbtn: Button? = null
+    //var listDevice: List<BluetoothDevice> = listOf()
 
     private val REQUEST_CODE_ENABLE_BT: Int = 1
     private var scanning = false
@@ -50,12 +51,21 @@ class BluetoothDeviceActivity : AppCompatActivity() {
 
     private val bleAccess: BleAccess? = null
 
+    private var mBoxManager: BoxManager? = null
+
+    var listDevice: SortedSet<BluetoothDevice> = TreeSet()
+
+    // constant
+    private val REQUEST_CONNECTDEVICE = 1
+    private val TRUE = 1
+    private val FALSE = 0
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_bluetooth_device)
         //actionBar!!.title = "Bluetooth"
 
-        var mBoxManager = BoxManager(applicationContext)
+        mBoxManager = BoxManager(applicationContext)
 
         if (!packageManager.hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)) {
             Toast.makeText(this, "ble_not_supported.", Toast.LENGTH_SHORT).show()
@@ -67,6 +77,7 @@ class BluetoothDeviceActivity : AppCompatActivity() {
             finish()
             return
         }
+
 
         //find view
         status = findViewById<TextView>(R.id.txtBTstatus)
@@ -144,7 +155,8 @@ class BluetoothDeviceActivity : AppCompatActivity() {
             if (bluetoothAdapter.isEnabled) {
                 Toast.makeText(this, "Start scan ", Toast.LENGTH_SHORT).show()
                 scanLeDevice()
-                //mBoxManager.StartScanBoxControllers()
+                Toast.makeText(this, "Scan successfully ", Toast.LENGTH_SHORT).show()
+                listDevice.addAll(list)
             } else {
                 Toast.makeText(this, "Please turn on Bluetooth first", Toast.LENGTH_SHORT).show()
             }
@@ -204,10 +216,6 @@ class BluetoothDeviceActivity : AppCompatActivity() {
         }
     }
 
-    private val mLeScanCallback =
-        LeScanCallback { device, rssi, scanRecord -> BleAccess.onScanSub(device, rssi, scanRecord) }
-
-    //val list: MutableList<Int> = mutableListOf(1, 2, 3)
     var list: MutableList<BluetoothDevice> = mutableListOf()
 
     private val leScanCallback: ScanCallback = object : ScanCallback() {
@@ -220,8 +228,7 @@ class BluetoothDeviceActivity : AppCompatActivity() {
 
             //test
             list.add(device)
-            val listDevice = list.toSet().toList();
-            Log.d("device list: ", listDevice.toString())
+            //listDevice = list.toSet().toList();
         }
     }
 

@@ -30,25 +30,25 @@ class  UserAdapter (val users: ArrayList<User>) : RecyclerView.Adapter<UserAdapt
     }
 }
 
-class DeviceAdapter (val devices: ArrayList<Devices>) : RecyclerView.Adapter<DeviceAdapter.ViewHolder>()
-{
-    class ViewHolder (ItemView: View) : RecyclerView.ViewHolder(ItemView){
-        val textDeviceID = itemView.findViewById<TextView>(R.id.deviceIDText) as TextView
-        val textDeviceName = itemView.findViewById<TextView>(R.id.HardwareDeviceCode) as TextView
-    }
-
-    override fun onCreateViewHolder(p0: ViewGroup, p1: Int): DeviceAdapter.ViewHolder{
-        val v = LayoutInflater.from(p0.context).inflate(R.layout.activity_main,p0)
-        return ViewHolder(v)
-    }
-
-    override fun getItemCount(): Int {
-        return devices.size
-    }
-    override fun onBindViewHolder(p0: DeviceAdapter.ViewHolder, p1: Int){
-        val device : Devices = devices[p1]
-
-        p0.textDeviceName.text = device.DeviceID.toString()
-        p0.textDeviceName.text = device.DeviceName.toString()
-    }
-}
+//class DeviceAdapter (val devices: ArrayList<Devices>) : RecyclerView.Adapter<DeviceAdapter.ViewHolder>()
+//{
+//    class ViewHolder (ItemView: View) : RecyclerView.ViewHolder(ItemView){
+//        val textDeviceID = itemView.findViewById<TextView>(R.id.deviceIDText) as TextView
+//        val textDeviceName = itemView.findViewById<TextView>(R.id.HardwareDeviceCode) as TextView
+//    }
+//
+//    override fun onCreateViewHolder(p0: ViewGroup, p1: Int): DeviceAdapter.ViewHolder{
+//        val v = LayoutInflater.from(p0.context).inflate(R.layout.activity_main,p0)
+//        return ViewHolder(v)
+//    }
+//
+//    override fun getItemCount(): Int {
+//        return devices.size
+//    }
+//    override fun onBindViewHolder(p0: DeviceAdapter.ViewHolder, p1: Int){
+//        val device : Devices = devices[p1]
+//
+//        p0.textDeviceName.text = device.DeviceID.toString()
+//        p0.textDeviceName.text = device.DeviceName.toString()
+//    }
+//}
