@@ -10,22 +10,23 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.cardview.widget.CardView
 import com.example.demo.MainActivity.Companion.HardwareDeviceCode
+import com.example.demo.MainActivity.Companion.TargetDevice
 import com.example.demo.MainActivity.Companion.aeskey
-import com.example.demo.MainActivity.Companion.isLockUnknown
+import com.example.demo.MainActivity.Companion.isConnect
+import com.example.demo.MainActivity.Companion.isLocked
 import com.example.demo.MainActivity.Companion.mAesKey
 import com.example.demo.MainActivity.Companion.mIvKey
-import com.example.demo.MainActivity.Companion.TargetDevice
 import com.example.demo.libs.Model.*
 import java.security.MessageDigest
 import javax.crypto.Cipher
 import javax.crypto.spec.IvParameterSpec
 import javax.crypto.spec.SecretKeySpec
-import kotlin.collections.ArrayList
 
 class DeviceListActivity : AppCompatActivity(){
 
     //create member
     private var txtHardwareDeviceCode: TextView? = null
+    private var txtLockStatus: TextView? = null
     private var cvDevice: CardView? = null
     private var target: DiscoverEventArgs? = null
     var bleDevice: BleDevice? = null
@@ -35,6 +36,10 @@ class DeviceListActivity : AppCompatActivity(){
         (getSystemService(BLUETOOTH_SERVICE) as BluetoothManager).adapter
     }
 
+    override fun onResume() {
+        super.onResume()
+        CheckLockStatus()
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -43,15 +48,17 @@ class DeviceListActivity : AppCompatActivity(){
         //get GUI
         cvDevice = findViewById(R.id.cvDevice1)
         txtHardwareDeviceCode = findViewById<TextView>(R.id.HardwareDeviceCode)
+        txtLockStatus = findViewById<TextView>(R.id.txtLockStatus)
         HardwareDeviceCode = txtHardwareDeviceCode!!.text.toString()
 
         //Create Aarray list
         TargetDevice = ArrayList<DiscoverEventArgs>()
 
         //set from constructor
-        getAeskey()
-        getDevice()
-        addDevice()
+        GetAeskey()
+        GetDevice()
+        AddDevice()
+        CheckLockStatus()
 
         //set card view listener
         cvDevice!!.setOnClickListener{
@@ -61,7 +68,15 @@ class DeviceListActivity : AppCompatActivity(){
         }
     }
 
-    private fun getAeskey() {
+    private fun CheckLockStatus() {
+        if (isLocked==true){
+            txtLockStatus!!.text = "Locked"
+        }else{
+            txtLockStatus!!.text = "Unlocked"
+        }
+    }
+
+    private fun GetAeskey() {
         aeskey = arrayOf(
             byteArrayOf(
                 0xDB.toByte(), 0x33.toByte(), 0x62.toByte(), 0x02.toByte(),
@@ -79,7 +94,7 @@ class DeviceListActivity : AppCompatActivity(){
         }
     }
 
-    private fun getDevice() {
+    private fun GetDevice() {
         //set bluetooth device
         bleDevice = BleDevice()
         bleAccess = BleAccess(applicationContext)
@@ -118,7 +133,7 @@ class DeviceListActivity : AppCompatActivity(){
                 if (hashTokenByte != null) {
                     hashToken = Utility.ToInt32(hashTokenByte, 0)
                 }
-                isLockUnknown.equals(true)
+                isConnect = true
                 TargetDevice!![0].box.Connect(cipheredToken, hashToken)
                 Log.e("Connect status", "device is connect")
             } catch (e: BoxException) {
@@ -128,7 +143,7 @@ class DeviceListActivity : AppCompatActivity(){
             }
     }
 
-    fun addDevice() {
+    fun AddDevice() {
         // IV Key
         val tmp = (HardwareDeviceCode!!.replace(":", "") + "00000000").toByteArray()
         var sha256 = byteArrayOf(0)
@@ -145,7 +160,6 @@ class DeviceListActivity : AppCompatActivity(){
         //add ivkey to array list
         mIvKey.add(ivkey)
     }
-
 }
 
 

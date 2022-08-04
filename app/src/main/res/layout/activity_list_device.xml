@@ -78,12 +78,12 @@
             </LinearLayout>
 
             <TextView
-                android:id="@+id/StatustextView1"
-                android:layout_width="wrap_content"
+                android:id="@+id/txtLockStatus"
+                android:layout_width="121dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="locked"
-                android:textAlignment="center"
+                android:text="..."
+                android:textAlignment="textEnd"
                 android:textColor="#3F51B5" />
 
         </LinearLayout>

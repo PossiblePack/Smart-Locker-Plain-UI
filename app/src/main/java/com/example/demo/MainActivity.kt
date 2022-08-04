@@ -1,6 +1,7 @@
 package com.example.demo
 
 import android.os.Bundle
+import android.os.Message
 import android.util.Log
 import android.widget.Button
 import android.widget.TextView
@@ -23,25 +24,8 @@ class MainActivity : AppCompatActivity() {
         var TargetDevice: ArrayList<DiscoverEventArgs>? = null
 
         // Status
-        var isConnect = Boolean
-        var isLocked = Boolean
-        var isLockUnknown = Boolean
-        var isUpdating = Boolean
-        var isCmdRunning = Boolean
-
-        // Connect Box Number
-        var mConnectBoxNo = Int
-
-        // Get Data
-        var retGetConfiguration = java.util.ArrayList<BoxControllerConfig>()
-        var retGetDateTime = java.util.ArrayList<Date>()
-        var retGetBatteryStatus = java.util.ArrayList<Int>()
-        var retGetStatus = java.util.ArrayList<BoxStatus>()
-        var retIsDoorOpened = java.util.ArrayList<Boolean>()
-        var retIsLocked = java.util.ArrayList<Boolean>()
-        var retGetEvents = java.util.ArrayList<EventsInformation>()
-        var retDeleteEvents = java.util.ArrayList<Int>()
-        var retGetPassword = java.util.ArrayList<Array<ByteArray>>()
+        var isConnect : Boolean = false
+        var isLocked : Boolean = true
     }
 
     var txtHardwareDeviceCode : TextView? = null
@@ -67,6 +51,18 @@ class MainActivity : AppCompatActivity() {
         btnUnlock!!.setOnClickListener {
             Unlock()
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        GetBatteryStatus()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        Lock()
+        Disconnect()
+        isLocked = true
     }
 
     private fun GetBatteryStatus(){
@@ -150,6 +146,7 @@ class MainActivity : AppCompatActivity() {
                     // Not Set Password
                     TargetDevice!![0].box.Unlock()
                 }
+                isLocked = false
                 Log.e("Unlock status", "Device is unlocked!")
             } catch (e: BoxException) {
                 Log.e("BoxException", e.message.toString())
@@ -161,7 +158,20 @@ class MainActivity : AppCompatActivity() {
     private fun Lock() {
             try {
                 TargetDevice!![0].box.Lock()
+                isLocked = true
                 Log.e("Lock status", "Device is locked")
+            } catch (e: BoxException) {
+                Log.e("BoxException", e.message.toString())
+            } catch (e: java.lang.Exception) {
+                Log.e("java.lang.Exception", e.message.toString())
+            }
+    }
+
+    private fun Disconnect() {
+            try {
+                TargetDevice!![0].box.Disconnect()
+                isConnect = false
+                Log.e("Device status", "Device is disconnected")
             } catch (e: BoxException) {
                 Log.e("BoxException", e.message.toString())
             } catch (e: java.lang.Exception) {
