@@ -7,7 +7,7 @@
     android:layout_height="match_parent">
 
     <androidx.cardview.widget.CardView
-        android:id="@+id/cardView1"
+        android:id="@+id/cvDevice1"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="10dp"
@@ -15,83 +15,78 @@
         android:layout_marginEnd="10dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent" >
 
-        <androidx.constraintlayout.widget.ConstraintLayout
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_weight="1"
-            tools:context=".LoginActivity" />
+            android:orientation="horizontal">
 
-<!--        <LinearLayout-->
-<!--            android:layout_width="match_parent"-->
-<!--            android:layout_height="match_parent"-->
-<!--            android:orientation="horizontal">-->
+            <LinearLayout
+                android:layout_width="301dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
 
-<!--            <LinearLayout-->
-<!--                android:layout_width="301dp"-->
-<!--                android:layout_height="wrap_content"-->
-<!--                android:layout_weight="1"-->
-<!--                android:orientation="vertical">-->
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:layout_width="344dp"
+                    android:layout_height="match_parent"
+                    tools:context=".LoginActivity">
 
-<!--                <androidx.constraintlayout.widget.ConstraintLayout-->
-<!--                    android:layout_width="344dp"-->
-<!--                    android:layout_height="match_parent"-->
-<!--                    tools:context=".LoginActivity">-->
+                    <TextView
+                        android:id="@+id/deviceIDText"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:layout_marginEnd="5dp"
+                        android:text="Locker1"
+                        android:textColor="#000000"
+                        android:textSize="18sp"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintHorizontal_bias="0.055"
+                        app:layout_constraintStart_toEndOf="@+id/textView"
+                        app:layout_constraintTop_toTopOf="parent" />
 
-<!--                    <TextView-->
-<!--                        android:id="@+id/deviceIDText"-->
-<!--                        android:layout_width="wrap_content"-->
-<!--                        android:layout_height="wrap_content"-->
-<!--                        android:layout_marginTop="16dp"-->
-<!--                        android:layout_marginEnd="5dp"-->
-<!--                        android:text="Locker1"-->
-<!--                        android:textColor="#000000"-->
-<!--                        android:textSize="18sp"-->
-<!--                        app:layout_constraintEnd_toEndOf="parent"-->
-<!--                        app:layout_constraintHorizontal_bias="0.055"-->
-<!--                        app:layout_constraintStart_toEndOf="@+id/textView"-->
-<!--                        app:layout_constraintTop_toTopOf="parent" />-->
+                    <TextView
+                        android:id="@+id/HardwareDeviceCode"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="10dp"
+                        android:layout_marginTop="8dp"
+                        android:text="08:6B:D7:16:B2:AD"
+                        android:textColor="#000000"
+                        android:textSize="14sp"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintHorizontal_bias="0.0"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toBottomOf="@+id/deviceIDText" />
 
-<!--                    <TextView-->
-<!--                        android:id="@+id/HardwareDeviceCode"-->
-<!--                        android:layout_width="0dp"-->
-<!--                        android:layout_height="wrap_content"-->
-<!--                        android:layout_marginStart="10dp"-->
-<!--                        android:layout_marginTop="8dp"-->
-<!--                        android:text="08:6B:D7:16:A6:96"-->
-<!--                        android:textColor="#000000"-->
-<!--                        android:textSize="14sp"-->
-<!--                        app:layout_constraintEnd_toEndOf="parent"-->
-<!--                        app:layout_constraintHorizontal_bias="0.0"-->
-<!--                        app:layout_constraintStart_toStartOf="parent"-->
-<!--                        app:layout_constraintTop_toBottomOf="@+id/deviceIDText" />-->
+                    <TextView
+                        android:id="@+id/textView"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="10dp"
+                        android:layout_marginTop="16dp"
+                        android:text="Name"
+                        android:textColor="#000000"
+                        android:textSize="18sp"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toTopOf="parent" />
 
-<!--                    <TextView-->
-<!--                        android:id="@+id/textView"-->
-<!--                        android:layout_width="wrap_content"-->
-<!--                        android:layout_height="wrap_content"-->
-<!--                        android:layout_marginStart="10dp"-->
-<!--                        android:layout_marginTop="16dp"-->
-<!--                        android:text="Name"-->
-<!--                        android:textColor="#000000"-->
-<!--                        android:textSize="18sp"-->
-<!--                        app:layout_constraintStart_toStartOf="parent"-->
-<!--                        app:layout_constraintTop_toTopOf="parent" />-->
+                </androidx.constraintlayout.widget.ConstraintLayout>
 
-<!--                </androidx.constraintlayout.widget.ConstraintLayout>-->
+            </LinearLayout>
 
-<!--            </LinearLayout>-->
+            <TextView
+                android:id="@+id/StatustextView1"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="locked"
+                android:textAlignment="center"
+                android:textColor="#3F51B5" />
 
-<!--            <TextView-->
-<!--                android:id="@+id/StatustextView1"-->
-<!--                android:layout_width="wrap_content"-->
-<!--                android:layout_height="wrap_content"-->
-<!--                android:layout_weight="1"-->
-<!--                android:text="Unlock"-->
-<!--                android:textAlignment="center"-->
-<!--                android:textColor="#3F51B5" />-->
-
-<!--        </LinearLayout>-->
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
