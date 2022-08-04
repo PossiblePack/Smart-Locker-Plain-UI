@@ -653,7 +653,7 @@ public class BleAccess implements IBleAccess
 	*/
 	public final void Connect(BluetoothDevice device) throws BoxException
 	{
-		BleLog.d(LOG_TAG, LOG_CLASS + "[Connect] Start" + ":device=" + device.getName());
+		//BleLog.d(LOG_TAG, LOG_CLASS + "[Connect] Start" + ":device=" + device.getName());
 
 		int ret = 0;
 		String id = "";

@@ -1,7 +1,6 @@
 package com.example.demo
 
 import android.os.Bundle
-import android.os.Message
 import android.util.Log
 import android.widget.Button
 import android.widget.TextView
@@ -12,17 +11,16 @@ import java.util.*
 import javax.crypto.Cipher
 import javax.crypto.spec.IvParameterSpec
 import javax.crypto.spec.SecretKeySpec
-import kotlin.collections.ArrayList
 
 class MainActivity : AppCompatActivity() {
 
     companion object {
+        var batteryStatus : Int? = null
         var HardwareDeviceCode : String? = null
-        var IvKey : ByteArray? = null
         var aeskey : Array<ByteArray>? = null
         var mIvKey = ArrayList<ByteArray>()
         var mAesKey = ArrayList<ByteArray>()
-        var mTargetDevice: ArrayList<DiscoverEventArgs>? = null
+        var TargetDevice: ArrayList<DiscoverEventArgs>? = null
 
         // Status
         var isConnect = Boolean
@@ -46,9 +44,8 @@ class MainActivity : AppCompatActivity() {
         var retGetPassword = java.util.ArrayList<Array<ByteArray>>()
     }
 
-    private var mUnlockThread: UnlockThread? = null
-
     var txtHardwareDeviceCode : TextView? = null
+    var txtGetBatteryStatus: TextView? = null
     var btnLock : Button? = null
     var btnUnlock : Button? = null
 
@@ -57,23 +54,34 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_lock_unlock)
 
         txtHardwareDeviceCode = findViewById<TextView>(R.id.txtDeviceKey)
+        txtGetBatteryStatus = findViewById<TextView>(R.id.txtBatteryStatus)
         btnLock = findViewById<Button>(R.id.btnLock)
         btnUnlock = findViewById<Button>(R.id.btnUnlock)
 
-        val intent = intent
-        txtHardwareDeviceCode!!.text = intent.getStringExtra("HardwareDeviceCode")
+        txtHardwareDeviceCode!!.text = HardwareDeviceCode
+        GetBatteryStatus()
 
         btnLock!!.setOnClickListener {
-
+            Lock()
         }
         btnUnlock!!.setOnClickListener {
-            mUnlockThread = UnlockThread()
-            mUnlockThread?.start()
+            Unlock()
         }
     }
 
-    private class UnlockThread : Thread() {
-        override fun run() {
+    private fun GetBatteryStatus(){
+            try {
+                batteryStatus = TargetDevice!![0].box.GetBatteryStatus()
+                Log.e("Battery Status", "Now battery status is equal ${batteryStatus}%")
+            } catch (e: BoxException) {
+                Log.e("BoxException", e.message.toString())
+            } catch (e: Exception) {
+                Log.e("BoxException", e.message.toString())
+            }
+            txtGetBatteryStatus!!.text = "$batteryStatus%"
+    }
+
+    private fun Unlock() {
             try {
                 val passwordTmp = Array(10) {
                     ByteArray(
@@ -118,9 +126,7 @@ class MainActivity : AppCompatActivity() {
                         }
                         var encrypter: Cipher
                         val iv = IvParameterSpec(mIvKey[0])
-                        Log.e("iv", iv.toString())
                         val key = SecretKeySpec(mAesKey[0], "AES")
-                        Log.e("key", key.toString())
                         encrypter = Cipher.getInstance("AES/CBC/PKCS5Padding")
                         encrypter.init(Cipher.ENCRYPT_MODE, key, iv)
                         var cipheredTmp = ByteArray(32)
@@ -139,48 +145,28 @@ class MainActivity : AppCompatActivity() {
                 }
                 if (isSetPassword == true) {
                     // Set Password
-                    mTargetDevice?.get(0)!!.box.Unlock(encryptedPassword, hashPassword)
+                    TargetDevice!![0].box.Unlock(encryptedPassword, hashPassword)
                 } else {
                     // Not Set Password
-                    mTargetDevice?.get(0)!!.box.Unlock()
+                    TargetDevice!![0].box.Unlock()
                 }
+                Log.e("Unlock status", "Device is unlocked!")
             } catch (e: BoxException) {
-                isLockUnknown.equals(true)
-                val msg = Message()
-                msg.obj = e.message
-                isCmdRunning.equals(false)
-//                mErrorMessageHandler.sendMessage(msg)
+                Log.e("BoxException", e.message.toString())
             } catch (e: java.lang.Exception) {
-                isLockUnknown.equals(true)
-                val msg = Message()
-                msg.obj = e.message
-                isCmdRunning.equals(false)
-//                mErrorMessageHandler.sendMessage(msg)
+                Log.e("java.lang.Exception", e.message.toString())
             }
-            isCmdRunning.equals(false)
-//            mViewUpdateHandler.sendEmptyMessage(MainActivity.TRUE)
-        }
     }
-    private class LockThread : Thread() {
-        override fun run() {
+
+    private fun Lock() {
             try {
-                mTargetDevice?.get(0)!!.box.Lock()
+                TargetDevice!![0].box.Lock()
+                Log.e("Lock status", "Device is locked")
             } catch (e: BoxException) {
-                isLockUnknown.equals(true)
-                val msg = Message()
-                msg.obj = e.message
-                isCmdRunning.equals(false)
-//                mErrorMessageHandler.sendMessage(msg)
+                Log.e("BoxException", e.message.toString())
             } catch (e: java.lang.Exception) {
-                isLockUnknown.equals(true)
-                val msg = Message()
-                msg.obj = e.message
-                isCmdRunning.equals(false)
-//                mErrorMessageHandler.sendMessage(msg)
+                Log.e("java.lang.Exception", e.message.toString())
             }
-            isCmdRunning.equals(false)
-//            mViewUpdateHandler.sendEmptyMessage(MainActivity.TRUE)
-        }
     }
 
 }
