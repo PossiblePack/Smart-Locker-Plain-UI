@@ -3,20 +3,27 @@ package com.example.demo
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothManager
+import android.content.Context
+import android.content.DialogInterface
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
+import android.view.View
 import android.widget.TextView
+import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.cardview.widget.CardView
 import com.example.demo.MainActivity.Companion.HardwareDeviceCode
-import com.example.demo.MainActivity.Companion.TargetDevice
 import com.example.demo.MainActivity.Companion.aeskey
 import com.example.demo.MainActivity.Companion.isConnect
 import com.example.demo.MainActivity.Companion.isLocked
 import com.example.demo.MainActivity.Companion.mAesKey
 import com.example.demo.MainActivity.Companion.mIvKey
+import com.example.demo.MainActivity.Companion.target
 import com.example.demo.libs.Model.*
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.snackbar.Snackbar
 import java.security.MessageDigest
 import javax.crypto.Cipher
 import javax.crypto.spec.IvParameterSpec
@@ -24,11 +31,12 @@ import javax.crypto.spec.SecretKeySpec
 
 class DeviceListActivity : AppCompatActivity(){
 
-    //create member
+    //initial GUI variable
     private var txtHardwareDeviceCode: TextView? = null
     private var txtLockStatus: TextView? = null
     private var cvDevice: CardView? = null
-    private var target: DiscoverEventArgs? = null
+
+    //initial member variable
     var bleDevice: BleDevice? = null
     var bleAccess: BleAccess? = null
     var device: BluetoothDevice? = null
@@ -36,9 +44,18 @@ class DeviceListActivity : AppCompatActivity(){
         (getSystemService(BLUETOOTH_SERVICE) as BluetoothManager).adapter
     }
 
-    override fun onResume() {
-        super.onResume()
-        CheckLockStatus()
+    //initial
+    val positiveButtonClick = { dialog: DialogInterface, which: Int ->
+        Toast.makeText(applicationContext,
+            R.string.yes, Toast.LENGTH_SHORT).show()
+    }
+    val negativeButtonClick = { dialog: DialogInterface, which: Int ->
+        Toast.makeText(applicationContext,
+            R.string.no, Toast.LENGTH_SHORT).show()
+    }
+    val neutralButtonClick = { dialog: DialogInterface, which: Int ->
+        Toast.makeText(applicationContext,
+            "", Toast.LENGTH_SHORT).show()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -49,30 +66,51 @@ class DeviceListActivity : AppCompatActivity(){
         cvDevice = findViewById(R.id.cvDevice1)
         txtHardwareDeviceCode = findViewById<TextView>(R.id.HardwareDeviceCode)
         txtLockStatus = findViewById<TextView>(R.id.txtLockStatus)
+
+        //Set $HardwareDeviceCode from $txtHardwareDeviceCode in GUI
         HardwareDeviceCode = txtHardwareDeviceCode!!.text.toString()
 
-        //Create Aarray list
-        TargetDevice = ArrayList<DiscoverEventArgs>()
-
         //set from constructor
-        GetAeskey()
-        GetDevice()
-        AddDevice()
         CheckLockStatus()
+        GetAeskey()
+
 
         //set card view listener
         cvDevice!!.setOnClickListener{
-            Connect()
-            val intent = Intent(this,MainActivity::class.java)
-            startActivity(intent)
+            SetDevice()
+            ConnectDevice()
         }
     }
 
+    fun ShowAlertDialogue(view: View, title: String, msg: String ){
+        val builder = AlertDialog.Builder(this)
+
+        with(builder)
+        {
+            setTitle(title)
+            setMessage(msg)
+            setPositiveButton(android.R.string.ok, positiveButtonClick)
+//            setPositiveButton("OK", DialogInterface.OnClickListener(function = positiveButtonClick))
+//            setNegativeButton(android.R.string.no, negativeButtonClick)
+//            setNeutralButton("Maybe", neutralButtonClick)
+            show()
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        CheckLockStatus()
+    }
+
     private fun CheckLockStatus() {
-        if (isLocked==true){
+        if (target == null){
             txtLockStatus!!.text = "Locked"
-        }else{
-            txtLockStatus!!.text = "Unlocked"
+        } else {
+            if (target!!.box.IsLocked()==true){
+                txtLockStatus!!.text = "Locked"
+            }else{
+                txtLockStatus!!.text = "Unlocked"
+            }
         }
     }
 
@@ -94,19 +132,33 @@ class DeviceListActivity : AppCompatActivity(){
         }
     }
 
-    private fun GetDevice() {
-        //set bluetooth device
+    private fun SetDevice() {
+        //initial bluetooth
         bleDevice = BleDevice()
         bleAccess = BleAccess(applicationContext)
-        device = bluetoothAdapter.getRemoteDevice("08:6B:D7:16:B2:AD")
-        bleDevice!!._Device = device
-        target = DiscoverEventArgs(bleAccess,bleDevice)
 
-        //add bluetooth device to array list
-        TargetDevice!!.add(target!!)
+        //set bluetooth device
+        try {
+//            device = bluetoothAdapter.getRemoteDevice("")                               //this null device
+//            device = bluetoothAdapter.getRemoteDevice("07:6B:D7:16:B2:AD")              //this incorrect device code
+            device = bluetoothAdapter.getRemoteDevice(HardwareDeviceCode)                      //this correct device code
+            bleDevice!!._Device = device
+            target = DiscoverEventArgs(bleAccess,bleDevice)
+
+            //get ivkey for connect device
+            GetDeviceIvkey()
+            Toast.makeText(this, "The device ${HardwareDeviceCode} is set!" , Toast.LENGTH_SHORT).show()
+        } catch (e: IllegalArgumentException) {
+            ShowAlertDialogue(View(this), "Get device failed", e.message.toString() )
+        }
     }
 
-    private fun Connect(){
+    private fun GoToDeviceLockUnlockPage(){
+        val intent = Intent(this,MainActivity::class.java)
+        startActivity(intent)
+    }
+
+    private fun ConnectDevice(){
             try {
                 val token = byteArrayOf(
                     0x01.toByte(), 0x00.toByte(), 0x00.toByte(), 0x00.toByte(),
@@ -134,31 +186,34 @@ class DeviceListActivity : AppCompatActivity(){
                     hashToken = Utility.ToInt32(hashTokenByte, 0)
                 }
                 isConnect = true
-                TargetDevice!![0].box.Connect(cipheredToken, hashToken)
-                Log.e("Connect status", "device is connect")
+                target!!.box.Connect(cipheredToken, hashToken)
+                Toast.makeText(this, "The device ${HardwareDeviceCode} is connect" , Toast.LENGTH_SHORT).show()
+                GoToDeviceLockUnlockPage()
             } catch (e: BoxException) {
-                Log.e("BoxException", e.message.toString())
+                ShowAlertDialogue(View(this), "Connect device failed", e.message.toString() )
             } catch (e: Exception) {
-                Log.e("Exception", e.message.toString())
+                ShowAlertDialogue(View(this), "Connect device failed", e.message.toString() )
             }
     }
 
-    fun AddDevice() {
-        // IV Key
+
+    fun GetDeviceIvkey() {
+        //Get IV Key
         val tmp = (HardwareDeviceCode!!.replace(":", "") + "00000000").toByteArray()
         var sha256 = byteArrayOf(0)
         try {
             sha256 = MessageDigest.getInstance("SHA-256").digest(tmp)
-        } catch (ex: java.lang.Exception) {
-            Log.e("java.lang.Exception", ex.message.toString())
-        }
-        val ivkey = ByteArray(16)
-        for (j in 0..15) {
-            ivkey[j] = sha256[16 + j]
-        }
+            val ivkey = ByteArray(16)
+            for (j in 0..15) {
+                ivkey[j] = sha256[16 + j]
+            }
 
-        //add ivkey to array list
-        mIvKey.add(ivkey)
+            //add ivkey to array list
+            mIvKey.add(ivkey)
+            Toast.makeText(this, "Get IV key from device ${HardwareDeviceCode} is successfully" , Toast.LENGTH_SHORT).show()
+        } catch (ex: java.lang.Exception) {
+            ShowAlertDialogue(View(this), "Get IV key failed", ex.message.toString() )
+        }
     }
 }
 

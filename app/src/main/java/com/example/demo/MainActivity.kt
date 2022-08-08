@@ -1,12 +1,17 @@
 package com.example.demo
 
+import android.content.DialogInterface
 import android.os.Bundle
-import android.os.Message
 import android.util.Log
+import android.view.View
 import android.widget.Button
 import android.widget.TextView
+import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import com.example.demo.libs.Model.*
+import com.example.demo.libs.Model.BoxException
+import com.example.demo.libs.Model.DiscoverEventArgs
+import com.example.demo.libs.Model.Utility
 import java.security.MessageDigest
 import java.util.*
 import javax.crypto.Cipher
@@ -21,17 +26,31 @@ class MainActivity : AppCompatActivity() {
         var aeskey : Array<ByteArray>? = null
         var mIvKey = ArrayList<ByteArray>()
         var mAesKey = ArrayList<ByteArray>()
-        var TargetDevice: ArrayList<DiscoverEventArgs>? = null
+        var target: DiscoverEventArgs? = null
 
         // Status
-        var isConnect : Boolean = false
-        var isLocked : Boolean = true
+        var isConnect : Boolean? = null
+        var isLocked : Boolean? = null
     }
 
     var txtHardwareDeviceCode : TextView? = null
     var txtGetBatteryStatus: TextView? = null
     var btnLock : Button? = null
     var btnUnlock : Button? = null
+
+    //initial
+    val positiveButtonClick = { dialog: DialogInterface, which: Int ->
+        Toast.makeText(applicationContext,
+            R.string.yes, Toast.LENGTH_SHORT).show()
+    }
+    val negativeButtonClick = { dialog: DialogInterface, which: Int ->
+        Toast.makeText(applicationContext,
+            R.string.no, Toast.LENGTH_SHORT).show()
+    }
+    val neutralButtonClick = { dialog: DialogInterface, which: Int ->
+        Toast.makeText(applicationContext,
+            "", Toast.LENGTH_SHORT).show()
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -53,6 +72,21 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    fun ShowAlertDialogue(view: View, title: String, msg: String ){
+        val builder = AlertDialog.Builder(this)
+
+        with(builder)
+        {
+            setTitle(title)
+            setMessage(msg)
+            setPositiveButton(android.R.string.ok, positiveButtonClick)
+//            setPositiveButton("OK", DialogInterface.OnClickListener(function = positiveButtonClick))
+//            setNegativeButton(android.R.string.no, negativeButtonClick)
+//            setNeutralButton("Maybe", neutralButtonClick)
+            show()
+        }
+    }
+
     override fun onResume() {
         super.onResume()
         GetBatteryStatus()
@@ -60,21 +94,19 @@ class MainActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        Lock()
         Disconnect()
-        isLocked = true
     }
 
     private fun GetBatteryStatus(){
             try {
-                batteryStatus = TargetDevice!![0].box.GetBatteryStatus()
+                batteryStatus = target!!.box.GetBatteryStatus()
                 Log.e("Battery Status", "Now battery status is equal ${batteryStatus}%")
+                txtGetBatteryStatus!!.text = "$batteryStatus%"
             } catch (e: BoxException) {
-                Log.e("BoxException", e.message.toString())
+                ShowAlertDialogue(View(this), "Get battery Status failed", e.message.toString() )
             } catch (e: Exception) {
-                Log.e("BoxException", e.message.toString())
+                ShowAlertDialogue(View(this), "Get battery Status failed", e.message.toString() )
             }
-            txtGetBatteryStatus!!.text = "$batteryStatus%"
     }
 
     private fun Unlock() {
@@ -141,41 +173,51 @@ class MainActivity : AppCompatActivity() {
                 }
                 if (isSetPassword == true) {
                     // Set Password
-                    TargetDevice!![0].box.Unlock(encryptedPassword, hashPassword)
+                    target!!.box.Unlock(encryptedPassword, hashPassword)
                 } else {
-                    // Not Set Password
-                    TargetDevice!![0].box.Unlock()
+                    // Not Set
+                    target!!.box.Unlock()
                 }
                 isLocked = false
-                Log.e("Unlock status", "Device is unlocked!")
+                Toast.makeText(this, "device is unlocked!" , Toast.LENGTH_SHORT).show()
             } catch (e: BoxException) {
                 Log.e("BoxException", e.message.toString())
+                ShowAlertDialogue(View(this), "Unlock device failed", e.message.toString() )
             } catch (e: java.lang.Exception) {
                 Log.e("java.lang.Exception", e.message.toString())
+                ShowAlertDialogue(View(this), "Unlock device failed", e.message.toString() )
             }
     }
 
     private fun Lock() {
             try {
-                TargetDevice!![0].box.Lock()
+                target!!.box.Lock()
                 isLocked = true
+                Log.e("Locked status", isLocked.toString())
                 Log.e("Lock status", "Device is locked")
+                Toast.makeText(this, "device is locked!" , Toast.LENGTH_SHORT).show()
             } catch (e: BoxException) {
                 Log.e("BoxException", e.message.toString())
+                ShowAlertDialogue(View(this), "Lock device failed", e.message.toString() )
             } catch (e: java.lang.Exception) {
                 Log.e("java.lang.Exception", e.message.toString())
+                ShowAlertDialogue(View(this), "Lock device failed", e.message.toString() )
             }
     }
 
     private fun Disconnect() {
             try {
-                TargetDevice!![0].box.Disconnect()
+                target!!.box.Disconnect()
                 isConnect = false
+                Log.e("Connect status", isConnect.toString())
                 Log.e("Device status", "Device is disconnected")
+                Toast.makeText(this, "The device ${HardwareDeviceCode} is disconnected!" , Toast.LENGTH_SHORT).show()
             } catch (e: BoxException) {
                 Log.e("BoxException", e.message.toString())
+                ShowAlertDialogue(View(this), "Disconnect device failed", e.message.toString() )
             } catch (e: java.lang.Exception) {
                 Log.e("java.lang.Exception", e.message.toString())
+                ShowAlertDialogue(View(this), "Disconnect device failed", e.message.toString() )
             }
     }
 
