@@ -3,11 +3,10 @@ package com.example.demo
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothManager
-import android.content.Context
 import android.content.DialogInterface
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
+import android.os.Handler
 import android.view.View
 import android.widget.TextView
 import android.widget.Toast
@@ -16,14 +15,10 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.cardview.widget.CardView
 import com.example.demo.MainActivity.Companion.HardwareDeviceCode
 import com.example.demo.MainActivity.Companion.aeskey
-import com.example.demo.MainActivity.Companion.isConnect
-import com.example.demo.MainActivity.Companion.isLocked
 import com.example.demo.MainActivity.Companion.mAesKey
 import com.example.demo.MainActivity.Companion.mIvKey
 import com.example.demo.MainActivity.Companion.target
 import com.example.demo.libs.Model.*
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import com.google.android.material.snackbar.Snackbar
 import java.security.MessageDigest
 import javax.crypto.Cipher
 import javax.crypto.spec.IvParameterSpec
@@ -90,26 +85,18 @@ class DeviceListActivity : AppCompatActivity(){
             setTitle(title)
             setMessage(msg)
             setPositiveButton(android.R.string.ok, positiveButtonClick)
-//            setPositiveButton("OK", DialogInterface.OnClickListener(function = positiveButtonClick))
-//            setNegativeButton(android.R.string.no, negativeButtonClick)
-//            setNeutralButton("Maybe", neutralButtonClick)
             show()
         }
     }
 
-    override fun onResume() {
-        super.onResume()
-        CheckLockStatus()
-    }
-
-    private fun CheckLockStatus() {
+    fun CheckLockStatus() {
         if (target == null){
             txtLockStatus!!.text = "Locked"
         } else {
-            if (target!!.box.IsLocked()==true){
-                txtLockStatus!!.text = "Locked"
-            }else{
+            if (target!!.box.IsLocked().equals(false)){
                 txtLockStatus!!.text = "Unlocked"
+            }else{
+                txtLockStatus!!.text = "Locked"
             }
         }
     }
@@ -133,22 +120,25 @@ class DeviceListActivity : AppCompatActivity(){
     }
 
     private fun SetDevice() {
-        //initial bluetooth
-        bleDevice = BleDevice()
-        bleAccess = BleAccess(applicationContext)
 
         //set bluetooth device
         try {
+            //initial bluetooth
+            bleDevice = BleDevice()
+            bleAccess = BleAccess(applicationContext)
 //            device = bluetoothAdapter.getRemoteDevice("")                               //this null device
 //            device = bluetoothAdapter.getRemoteDevice("07:6B:D7:16:B2:AD")              //this incorrect device code
             device = bluetoothAdapter.getRemoteDevice(HardwareDeviceCode)                      //this correct device code
             bleDevice!!._Device = device
             target = DiscoverEventArgs(bleAccess,bleDevice)
 
+
             //get ivkey for connect device
             GetDeviceIvkey()
-            Toast.makeText(this, "The device ${HardwareDeviceCode} is set!" , Toast.LENGTH_SHORT).show()
+//            Toast.makeText(this, "The device ${HardwareDeviceCode} is set!" , Toast.LENGTH_SHORT).show()
         } catch (e: IllegalArgumentException) {
+            ShowAlertDialogue(View(this), "Get device failed", e.message.toString() )
+        } catch (e: BoxException) {
             ShowAlertDialogue(View(this), "Get device failed", e.message.toString() )
         }
     }
@@ -158,42 +148,81 @@ class DeviceListActivity : AppCompatActivity(){
         startActivity(intent)
     }
 
-    private fun ConnectDevice(){
-            try {
-                val token = byteArrayOf(
-                    0x01.toByte(), 0x00.toByte(), 0x00.toByte(), 0x00.toByte(),
-                    0x00.toByte(), 0x00.toByte(), 0x00.toByte(), 0x00.toByte(),
-                    0xFF.toByte(), 0xFF.toByte(), 0xFF.toByte(), 0xFF.toByte(),
-                    0x00.toByte(), 0x00.toByte(), 0x00.toByte(), 0x00.toByte()
-                )
-                var cipheredTmp = ByteArray(32)
-                val cipheredToken = ByteArray(16)
-                val hashTokenByte = ByteArray(4)
+    private fun ConnectDevice() = try {
+        val token = byteArrayOf(
+            0x01.toByte(), 0x00.toByte(), 0x00.toByte(), 0x00.toByte(),
+            0x00.toByte(), 0x00.toByte(), 0x00.toByte(), 0x00.toByte(),
+            0xFF.toByte(), 0xFF.toByte(), 0xFF.toByte(), 0xFF.toByte(),
+            0x00.toByte(), 0x00.toByte(), 0x00.toByte(), 0x00.toByte()
+        )
+        var cipheredTmp = ByteArray(32)
+        val cipheredToken = ByteArray(16)
+        val hashTokenByte = ByteArray(4)
+        val iv = IvParameterSpec(mIvKey[0])
+        val key = SecretKeySpec(mAesKey[0], "AES")
+        val encrypter: Cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
+        encrypter.init(Cipher.ENCRYPT_MODE, key, iv)
+        cipheredTmp = encrypter.doFinal(token)
+        for (i in 0..15) {
+            cipheredToken[i] = cipheredTmp[i]
+        }
+        val sha256 = MessageDigest.getInstance("SHA-256").digest(token)
+        for (i in 0..3) {
+            hashTokenByte[i] = sha256[28 + i]
+        }
+        var hashToken = 0
+        if (hashTokenByte != null) {
+            hashToken = Utility.ToInt32(hashTokenByte, 0)
+        }
+        target!!.box.Connect(cipheredToken, hashToken)
+        setConfiguration()
+        //Toast.makeText(this, "The device ${HardwareDeviceCode} is connect" , Toast.LENGTH_SHORT).show()
+        GoToDeviceLockUnlockPage()
+    } catch (e: BoxException) {
+        ShowAlertDialogue(View(this), "Connect device failed", e.message.toString() )
+    } catch (e: Exception) {
+        ShowAlertDialogue(View(this), "Connect device failed", e.message.toString() )
+    }
+
+    private fun setConfiguration() {
+        //set configuration
+        var config: ByteArray? = byteArrayOf(
+            0xFB.toByte(), 0x00.toByte(), 0x00.toByte(), 0x00.toByte(),     //interval=251
+            0xE2.toByte(), 0xFF.toByte(), 0xFF.toByte(), 0xFF.toByte(),     //txpow=-30
+            0x06.toByte(), 0x00.toByte(), 0x00.toByte(), 0x00.toByte(),     //ch=6
+            0x06.toByte(), 0x00.toByte(), 0x00.toByte(), 0x00.toByte(),     //attmpt_max=6
+            0x3C.toByte(), 0x00.toByte(), 0x00.toByte(), 0x00.toByte(),     //auto_close=60
+            0x14.toByte(), 0x00.toByte(), 0x00.toByte(), 0x00.toByte(),     //input_impossible_time=20
+            0x04.toByte(), 0x00.toByte(), 0x00.toByte(), 0x00.toByte(),     //warn_event=4
+            0x00.toByte(), 0x00.toByte(), 0x00.toByte(), 0x00.toByte(),     //conn_tout=0
+            0x1E.toByte(), 0x00.toByte(), 0x00.toByte(), 0x00.toByte()      //password_delete_time=30
+        )
+        try {
+            val cipheredBoxConfig = ByteArray(48)
+            val hashConfigByte = ByteArray(4)
+            var hashConfig = 0
+            if (hashConfigByte != null) {
+                val encrypter: Cipher
                 val iv = IvParameterSpec(mIvKey[0])
                 val key = SecretKeySpec(mAesKey[0], "AES")
-                val encrypter: Cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
+                encrypter = Cipher.getInstance("AES/CBC/PKCS5Padding")
                 encrypter.init(Cipher.ENCRYPT_MODE, key, iv)
-                cipheredTmp = encrypter.doFinal(token)
-                for (i in 0..15) {
-                    cipheredToken[i] = cipheredTmp[i]
+                val cipheredTmp = encrypter.doFinal(config)
+                for (i in 0..47) {
+                    cipheredBoxConfig[i] = cipheredTmp[i]
                 }
-                val sha256 = MessageDigest.getInstance("SHA-256").digest(token)
+                val sha256 = MessageDigest.getInstance("SHA-256").digest(config)
                 for (i in 0..3) {
-                    hashTokenByte[i] = sha256[28 + i]
+                    hashConfigByte[i] = sha256[28 + i]
                 }
-                var hashToken = 0
-                if (hashTokenByte != null) {
-                    hashToken = Utility.ToInt32(hashTokenByte, 0)
-                }
-                isConnect = true
-                target!!.box.Connect(cipheredToken, hashToken)
-                Toast.makeText(this, "The device ${HardwareDeviceCode} is connect" , Toast.LENGTH_SHORT).show()
-                GoToDeviceLockUnlockPage()
-            } catch (e: BoxException) {
-                ShowAlertDialogue(View(this), "Connect device failed", e.message.toString() )
-            } catch (e: Exception) {
-                ShowAlertDialogue(View(this), "Connect device failed", e.message.toString() )
+                hashConfig = Utility.ToInt32(hashConfigByte, 0)
+                target!!.box.SetConfiguration(cipheredBoxConfig, hashConfig);
             }
+        } catch (e: BoxException){
+            ShowAlertDialogue(View(this), "Set configuration failed", e.message.toString() )
+        } catch (e: java.lang.Exception){
+            ShowAlertDialogue(View(this), "Set configuration failed", e.message.toString() )
+        }
     }
 
 
@@ -207,10 +236,9 @@ class DeviceListActivity : AppCompatActivity(){
             for (j in 0..15) {
                 ivkey[j] = sha256[16 + j]
             }
-
             //add ivkey to array list
             mIvKey.add(ivkey)
-            Toast.makeText(this, "Get IV key from device ${HardwareDeviceCode} is successfully" , Toast.LENGTH_SHORT).show()
+//            Toast.makeText(this, "Get IV key from device ${HardwareDeviceCode} is successfully" , Toast.LENGTH_SHORT).show()
         } catch (ex: java.lang.Exception) {
             ShowAlertDialogue(View(this), "Get IV key failed", ex.message.toString() )
         }

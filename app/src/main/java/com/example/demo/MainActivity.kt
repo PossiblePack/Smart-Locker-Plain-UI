@@ -2,6 +2,7 @@ package com.example.demo
 
 import android.content.DialogInterface
 import android.os.Bundle
+import android.os.Handler
 import android.util.Log
 import android.view.View
 import android.widget.Button
@@ -28,20 +29,18 @@ class MainActivity : AppCompatActivity() {
         var mAesKey = ArrayList<ByteArray>()
         var target: DiscoverEventArgs? = null
 
-        // Status
-        var isConnect : Boolean? = null
-        var isLocked : Boolean? = null
     }
 
     var txtHardwareDeviceCode : TextView? = null
     var txtGetBatteryStatus: TextView? = null
     var btnLock : Button? = null
     var btnUnlock : Button? = null
+    var txtLockStat: TextView? = null
 
     //initial
     val positiveButtonClick = { dialog: DialogInterface, which: Int ->
-        Toast.makeText(applicationContext,
-            R.string.yes, Toast.LENGTH_SHORT).show()
+//        Toast.makeText(applicationContext,
+//            R.string.yes, Toast.LENGTH_SHORT).show()
     }
     val negativeButtonClick = { dialog: DialogInterface, which: Int ->
         Toast.makeText(applicationContext,
@@ -60,6 +59,10 @@ class MainActivity : AppCompatActivity() {
         txtGetBatteryStatus = findViewById<TextView>(R.id.txtBatteryStatus)
         btnLock = findViewById<Button>(R.id.btnLock)
         btnUnlock = findViewById<Button>(R.id.btnUnlock)
+        txtLockStat = findViewById<TextView>(R.id.txtLockStat)
+
+        CheckLockStatus()
+
 
         txtHardwareDeviceCode!!.text = HardwareDeviceCode
         GetBatteryStatus()
@@ -72,6 +75,15 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun CheckLockStatus(){
+        if (target!!.box.IsLocked().equals(false)){
+            txtLockStat!!.text = "Unlocked"
+        }else{
+            txtLockStat!!.text = "Locked"
+        }
+        Toast.makeText(this, txtLockStat!!.text, Toast.LENGTH_SHORT)
+    }
+
     fun ShowAlertDialogue(view: View, title: String, msg: String ){
         val builder = AlertDialog.Builder(this)
 
@@ -80,16 +92,20 @@ class MainActivity : AppCompatActivity() {
             setTitle(title)
             setMessage(msg)
             setPositiveButton(android.R.string.ok, positiveButtonClick)
-//            setPositiveButton("OK", DialogInterface.OnClickListener(function = positiveButtonClick))
-//            setNegativeButton(android.R.string.no, negativeButtonClick)
-//            setNeutralButton("Maybe", neutralButtonClick)
             show()
         }
     }
 
+    //initial for check every 60 seconds
+    var handler: Handler = Handler()
+    var runable: Runnable? = null
+
     override fun onResume() {
+        handler.postDelayed(Runnable {
+            handler.postDelayed(runable!!, 20000.toLong())
+            CheckLockStatus()
+        }.also { runable = it }, 20000.toLong())
         super.onResume()
-        GetBatteryStatus()
     }
 
     override fun onDestroy() {
@@ -111,75 +127,77 @@ class MainActivity : AppCompatActivity() {
 
     private fun Unlock() {
             try {
-                val passwordTmp = Array(10) {
-                    ByteArray(
-                        1
-                    )
-                }
-                val encryptedPassword = Array(10) {
-                    ByteArray(
-                        16
-                    )
-                }
-                val hashPasswordByte = Array(10) {
-                    ByteArray(
-                        4
-                    )
-                }
-                var isSetPassword = true
-                passwordTmp[0] = "0".toByteArray()
-                passwordTmp[1] = "1".toByteArray()
-                passwordTmp[2] = "2".toByteArray()
-                passwordTmp[3] = "3".toByteArray()
-                passwordTmp[4] = "4".toByteArray()
-                passwordTmp[5] = "5".toByteArray()
-                passwordTmp[6] = "6".toByteArray()
-                passwordTmp[7] = "7".toByteArray()
-                passwordTmp[8] = "8".toByteArray()
-                passwordTmp[9] = "9".toByteArray()
-                val hashPassword = arrayOfNulls<Int>(10)
-                if (hashPasswordByte != null) {
-                    for (j in 0..9) {
-                        if (Arrays.equals(passwordTmp[j], "".toByteArray())) {
-                            // Empty password
-                            for (i in 0..15) {
-                                encryptedPassword[j][i] = 0
-                            }
-                            hashPassword[j] = 0
-                            continue
-                        }
-                        val password = ByteArray(16)
-                        for (i in 0 until passwordTmp[j].size) {
-                            password[i] = passwordTmp[j][i]
-                        }
-                        var encrypter: Cipher
-                        val iv = IvParameterSpec(mIvKey[0])
-                        val key = SecretKeySpec(mAesKey[0], "AES")
-                        encrypter = Cipher.getInstance("AES/CBC/PKCS5Padding")
-                        encrypter.init(Cipher.ENCRYPT_MODE, key, iv)
-                        var cipheredTmp = ByteArray(32)
-                        cipheredTmp = encrypter.doFinal(password)
-                        for (i in 0..15) {
-                            encryptedPassword[j][i] = cipheredTmp[i]
-                        }
-                        val sha256 = MessageDigest.getInstance("SHA-256").digest(
-                            passwordTmp[j]
+                if(target!!.box.IsLocked().equals(true)){
+                    val passwordTmp = Array(10) {
+                        ByteArray(
+                            1
                         )
-                        for (i in 0..3) {
-                            hashPasswordByte[j][i] = sha256[28 + i]
-                        }
-                        hashPassword[j] = Utility.ToInt32(hashPasswordByte[j], 0)
                     }
-                }
-                if (isSetPassword == true) {
-                    // Set Password
-                    target!!.box.Unlock(encryptedPassword, hashPassword)
-                } else {
-                    // Not Set
-                    target!!.box.Unlock()
-                }
-                isLocked = false
-                Toast.makeText(this, "device is unlocked!" , Toast.LENGTH_SHORT).show()
+                    val encryptedPassword = Array(10) {
+                        ByteArray(
+                            16
+                        )
+                    }
+                    val hashPasswordByte = Array(10) {
+                        ByteArray(
+                            4
+                        )
+                    }
+                    var isSetPassword = true
+                    passwordTmp[0] = "0".toByteArray()
+                    passwordTmp[1] = "1".toByteArray()
+                    passwordTmp[2] = "2".toByteArray()
+                    passwordTmp[3] = "3".toByteArray()
+                    passwordTmp[4] = "4".toByteArray()
+                    passwordTmp[5] = "5".toByteArray()
+                    passwordTmp[6] = "6".toByteArray()
+                    passwordTmp[7] = "7".toByteArray()
+                    passwordTmp[8] = "8".toByteArray()
+                    passwordTmp[9] = "9".toByteArray()
+                    val hashPassword = arrayOfNulls<Int>(10)
+                    if (hashPasswordByte != null) {
+                        for (j in 0..9) {
+                            if (Arrays.equals(passwordTmp[j], "".toByteArray())) {
+                                // Empty password
+                                for (i in 0..15) {
+                                    encryptedPassword[j][i] = 0
+                                }
+                                hashPassword[j] = 0
+                                continue
+                            }
+                            val password = ByteArray(16)
+                            for (i in 0 until passwordTmp[j].size) {
+                                password[i] = passwordTmp[j][i]
+                            }
+                            var encrypter: Cipher
+                            val iv = IvParameterSpec(mIvKey[0])
+                            val key = SecretKeySpec(mAesKey[0], "AES")
+                            encrypter = Cipher.getInstance("AES/CBC/PKCS5Padding")
+                            encrypter.init(Cipher.ENCRYPT_MODE, key, iv)
+                            var cipheredTmp = ByteArray(32)
+                            cipheredTmp = encrypter.doFinal(password)
+                            for (i in 0..15) {
+                                encryptedPassword[j][i] = cipheredTmp[i]
+                            }
+                            val sha256 = MessageDigest.getInstance("SHA-256").digest(
+                                passwordTmp[j]
+                            )
+                            for (i in 0..3) {
+                                hashPasswordByte[j][i] = sha256[28 + i]
+                            }
+                            hashPassword[j] = Utility.ToInt32(hashPasswordByte[j], 0)
+                        }
+                    }
+                    if (isSetPassword == true) {
+                        // Set Password
+                        target!!.box.Unlock(encryptedPassword, hashPassword)
+                    } else {
+                        // Not Set
+                        target!!.box.Unlock()
+                    }
+//                    Toast.makeText(this, "device is unlocked!" , Toast.LENGTH_SHORT).show()
+                } else { }  // device is already unlock!
+                CheckLockStatus()
             } catch (e: BoxException) {
                 Log.e("BoxException", e.message.toString())
                 ShowAlertDialogue(View(this), "Unlock device failed", e.message.toString() )
@@ -191,11 +209,15 @@ class MainActivity : AppCompatActivity() {
 
     private fun Lock() {
             try {
-                target!!.box.Lock()
-                isLocked = true
-                Log.e("Locked status", isLocked.toString())
-                Log.e("Lock status", "Device is locked")
-                Toast.makeText(this, "device is locked!" , Toast.LENGTH_SHORT).show()
+                if(target!!.box.IsLocked().equals(true)){       //device already lock!
+                } else {
+                    target!!.box.Lock()
+                    Log.e("Locked status", target!!.box.IsLocked().toString())
+                    Log.e("Lock status", "Device is locked")
+//                    Toast.makeText(this, "device is locked!" , Toast.LENGTH_SHORT).show()
+
+                }
+                CheckLockStatus()
             } catch (e: BoxException) {
                 Log.e("BoxException", e.message.toString())
                 ShowAlertDialogue(View(this), "Lock device failed", e.message.toString() )
@@ -208,10 +230,9 @@ class MainActivity : AppCompatActivity() {
     private fun Disconnect() {
             try {
                 target!!.box.Disconnect()
-                isConnect = false
-                Log.e("Connect status", isConnect.toString())
+                Log.e("Locked status", target!!.box.IsLocked().toString())
                 Log.e("Device status", "Device is disconnected")
-                Toast.makeText(this, "The device ${HardwareDeviceCode} is disconnected!" , Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "The device is disconnected!" , Toast.LENGTH_SHORT).show()
             } catch (e: BoxException) {
                 Log.e("BoxException", e.message.toString())
                 ShowAlertDialogue(View(this), "Disconnect device failed", e.message.toString() )
