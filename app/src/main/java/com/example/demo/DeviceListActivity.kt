@@ -15,6 +15,8 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.cardview.widget.CardView
 import com.example.demo.MainActivity.Companion.HardwareDeviceCode
 import com.example.demo.MainActivity.Companion.aeskey
+import com.example.demo.MainActivity.Companion.autoLockTime
+import com.example.demo.MainActivity.Companion.isLocked
 import com.example.demo.MainActivity.Companion.mAesKey
 import com.example.demo.MainActivity.Companion.mIvKey
 import com.example.demo.MainActivity.Companion.target
@@ -66,9 +68,8 @@ class DeviceListActivity : AppCompatActivity(){
         HardwareDeviceCode = txtHardwareDeviceCode!!.text.toString()
 
         //set from constructor
-        CheckLockStatus()
+        txtLockStatus!!.text = "Locked"
         GetAeskey()
-
 
         //set card view listener
         cvDevice!!.setOnClickListener{
@@ -89,15 +90,12 @@ class DeviceListActivity : AppCompatActivity(){
         }
     }
 
-    fun CheckLockStatus() {
-        if (target == null){
+    override fun onResume() {
+        super.onResume()
+        if (isLocked==false){
+            txtLockStatus!!.text = "Unlocked"
+        }else{
             txtLockStatus!!.text = "Locked"
-        } else {
-            if (target!!.box.IsLocked().equals(false)){
-                txtLockStatus!!.text = "Unlocked"
-            }else{
-                txtLockStatus!!.text = "Locked"
-            }
         }
     }
 
@@ -132,10 +130,8 @@ class DeviceListActivity : AppCompatActivity(){
             bleDevice!!._Device = device
             target = DiscoverEventArgs(bleAccess,bleDevice)
 
-
             //get ivkey for connect device
             GetDeviceIvkey()
-//            Toast.makeText(this, "The device ${HardwareDeviceCode} is set!" , Toast.LENGTH_SHORT).show()
         } catch (e: IllegalArgumentException) {
             ShowAlertDialogue(View(this), "Get device failed", e.message.toString() )
         } catch (e: BoxException) {
@@ -217,6 +213,7 @@ class DeviceListActivity : AppCompatActivity(){
                 }
                 hashConfig = Utility.ToInt32(hashConfigByte, 0)
                 target!!.box.SetConfiguration(cipheredBoxConfig, hashConfig);
+                autoLockTime = target!!.box.GetConfiguration()._autoCloseTime
             }
         } catch (e: BoxException){
             ShowAlertDialogue(View(this), "Set configuration failed", e.message.toString() )

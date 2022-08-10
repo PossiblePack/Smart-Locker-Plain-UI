@@ -28,16 +28,47 @@ class MainActivity : AppCompatActivity() {
         var mIvKey = ArrayList<ByteArray>()
         var mAesKey = ArrayList<ByteArray>()
         var target: DiscoverEventArgs? = null
-
+        var autoLockTime: Int? = null
+        val handler: Handler? = Handler()
+        var runnable: Runnable? = null
+        var isCountdown: Boolean? = null
+        var isLocked: Boolean? = null
     }
 
-    var txtHardwareDeviceCode : TextView? = null
-    var txtGetBatteryStatus: TextView? = null
-    var btnLock : Button? = null
-    var btnUnlock : Button? = null
-    var txtLockStat: TextView? = null
+    private class CountDownAndCheckAfterUnlock(_autoCloseTime: Int, txtLockStat: TextView?, handler: Handler, runnable: Runnable?, isCountdown: Boolean?) : Thread() {
+        val txtLockStat: TextView? = txtLockStat
+        private var LockStat : String? = null
+        val autoLockTime = (_autoCloseTime - 1)*1000
 
-    //initial
+        override fun run() {
+            Log.e("Countdown: ", "Start countdown for ${autoLockTime.toString()} ms")
+            handler!!.postDelayed(Runnable {
+                handler.postDelayed(runnable!!, autoLockTime.toLong())
+                Log.e("Count down:", "Start check")
+                if (target!!.box.IsLocked().equals(false)){
+                    LockStat = "Unlocked"
+                    isCountdown = true
+                    Log.e("txtLockStat", LockStat!!)
+                }else{
+                    LockStat = "Locked"
+                    Log.e("txtLockStat", LockStat!!)
+                    isCountdown = false
+                    txtLockStat!!.text = LockStat!!
+                    Log.e("Countdown: ", "Stop countdown")
+                    handler.removeCallbacks(runnable!!);
+                }
+            }.also { runnable = it }, 1000.toLong())
+        }
+    }
+
+    //initial GUI item
+    private var txtHardwareDeviceCode : TextView? = null
+    private var txtGetBatteryStatus: TextView? = null
+    private var btnLock : Button? = null
+    private var btnUnlock : Button? = null
+    private var txtLockStat: TextView? = null
+
+    //initial AlertDialogue Button
     val positiveButtonClick = { dialog: DialogInterface, which: Int ->
 //        Toast.makeText(applicationContext,
 //            R.string.yes, Toast.LENGTH_SHORT).show()
@@ -81,7 +112,6 @@ class MainActivity : AppCompatActivity() {
         }else{
             txtLockStat!!.text = "Locked"
         }
-        Toast.makeText(this, txtLockStat!!.text, Toast.LENGTH_SHORT)
     }
 
     fun ShowAlertDialogue(view: View, title: String, msg: String ){
@@ -96,22 +126,18 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    //initial for check every 60 seconds
-    var handler: Handler = Handler()
-    var runable: Runnable? = null
-
-    override fun onResume() {
-        handler.postDelayed(Runnable {
-            handler.postDelayed(runable!!, 20000.toLong())
-            CheckLockStatus()
-        }.also { runable = it }, 20000.toLong())
-        super.onResume()
-    }
-
     override fun onDestroy() {
         super.onDestroy()
+        if (isCountdown == true){
+            handler!!.removeCallbacks(runnable!!);
+            isLocked = true
+        }else{
+            isLocked = false
+        }
+        CheckLockStatus()
         Disconnect()
     }
+
 
     private fun GetBatteryStatus(){
             try {
@@ -195,9 +221,11 @@ class MainActivity : AppCompatActivity() {
                         // Not Set
                         target!!.box.Unlock()
                     }
-//                    Toast.makeText(this, "device is unlocked!" , Toast.LENGTH_SHORT).show()
                 } else { }  // device is already unlock!
                 CheckLockStatus()
+                autoLockTime = target!!.box.GetConfiguration()._autoCloseTime
+                val countdown =  CountDownAndCheckAfterUnlock(autoLockTime!!, txtLockStat, handler!! , runnable, isCountdown)
+                countdown!!.start()
             } catch (e: BoxException) {
                 Log.e("BoxException", e.message.toString())
                 ShowAlertDialogue(View(this), "Unlock device failed", e.message.toString() )
@@ -214,8 +242,6 @@ class MainActivity : AppCompatActivity() {
                     target!!.box.Lock()
                     Log.e("Locked status", target!!.box.IsLocked().toString())
                     Log.e("Lock status", "Device is locked")
-//                    Toast.makeText(this, "device is locked!" , Toast.LENGTH_SHORT).show()
-
                 }
                 CheckLockStatus()
             } catch (e: BoxException) {
@@ -230,7 +256,7 @@ class MainActivity : AppCompatActivity() {
     private fun Disconnect() {
             try {
                 target!!.box.Disconnect()
-                Log.e("Locked status", target!!.box.IsLocked().toString())
+//                Log.e("Locked status", target!!.box.IsLocked().toString())
                 Log.e("Device status", "Device is disconnected")
                 Toast.makeText(this, "The device is disconnected!" , Toast.LENGTH_SHORT).show()
             } catch (e: BoxException) {
@@ -241,5 +267,4 @@ class MainActivity : AppCompatActivity() {
                 ShowAlertDialogue(View(this), "Disconnect device failed", e.message.toString() )
             }
     }
-
 }
