@@ -1,5 +1,6 @@
 package com.example.demo
 
+import android.app.Activity
 import android.content.DialogInterface
 import android.os.Bundle
 import android.os.Handler
@@ -21,6 +22,8 @@ import javax.crypto.spec.SecretKeySpec
 
 class MainActivity : AppCompatActivity() {
 
+    private var loadingDialogue: LoadingDialogue? = null
+
     companion object {
         var batteryStatus : Int? = null
         var HardwareDeviceCode : String? = null
@@ -33,6 +36,25 @@ class MainActivity : AppCompatActivity() {
         var runnable: Runnable? = null
         var isCountdown: Boolean? = null
         var isLocked: Boolean? = null
+        var isRunnning: Boolean? = null
+
+        class LoadingDialogue(myactivity: Activity) : Thread(){
+            val layoutInflater = myactivity.layoutInflater
+            val builder = AlertDialog.Builder(myactivity).setView(layoutInflater.inflate(R.layout.loading, null))
+                                                         .setCancelable(false)
+            val dialog = builder.create()
+
+            fun startLoadingDialogue(){
+                Log.e("Loading", "Start loading")
+                dialog!!.show()
+            }
+
+            fun stopLoadingDialog() {
+                dialog!!.dismiss()
+                Log.e("Loading", "Stop loading")
+            }
+        }
+
     }
 
     private class CountDownAndCheckAfterUnlock(_autoCloseTime: Int, txtLockStat: TextView?, handler: Handler, runnable: Runnable?, isCountdown: Boolean?) : Thread() {
@@ -94,7 +116,6 @@ class MainActivity : AppCompatActivity() {
 
         CheckLockStatus()
 
-
         txtHardwareDeviceCode!!.text = HardwareDeviceCode
         GetBatteryStatus()
 
@@ -107,10 +128,14 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun CheckLockStatus(){
-        if (target!!.box.IsLocked().equals(false)){
-            txtLockStat!!.text = "Unlocked"
-        }else{
+        if (target == null){
             txtLockStat!!.text = "Locked"
+        } else {
+            if (target!!.box.IsLocked().equals(false)){
+                txtLockStat!!.text = "Unlocked"
+            }else{
+                txtLockStat!!.text = "Locked"
+            }
         }
     }
 

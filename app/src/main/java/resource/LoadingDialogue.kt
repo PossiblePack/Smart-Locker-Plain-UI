@@ -1,4 +1,0 @@
-package resource
-
-class LoadingDialogue {
-}

@@ -1,32 +1,43 @@
 package com.example.demo
 
+import android.app.Activity
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothManager
 import android.content.DialogInterface
 import android.content.Intent
 import android.os.Bundle
-import android.os.Handler
+import android.util.Log
 import android.view.View
+import android.view.View.*
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.cardview.widget.CardView
+import com.example.demo.MainActivity.Companion
 import com.example.demo.MainActivity.Companion.HardwareDeviceCode
 import com.example.demo.MainActivity.Companion.aeskey
 import com.example.demo.MainActivity.Companion.autoLockTime
+import com.example.demo.MainActivity.Companion.handler
 import com.example.demo.MainActivity.Companion.isLocked
+import com.example.demo.MainActivity.Companion.isRunnning
 import com.example.demo.MainActivity.Companion.mAesKey
 import com.example.demo.MainActivity.Companion.mIvKey
 import com.example.demo.MainActivity.Companion.target
 import com.example.demo.libs.Model.*
+import kotlinx.coroutines.*
+import kotlinx.coroutines.Dispatchers.IO
+import kotlinx.coroutines.Dispatchers.Main
 import java.security.MessageDigest
 import javax.crypto.Cipher
 import javax.crypto.spec.IvParameterSpec
 import javax.crypto.spec.SecretKeySpec
 
-class DeviceListActivity : AppCompatActivity(){
+class DeviceListActivity : AppCompatActivity(), OnClickListener {
+
+    private var loadingDialogue: Companion.LoadingDialogue? = null
+    private var activity: Activity? = null
 
     //initial GUI variable
     private var txtHardwareDeviceCode: TextView? = null
@@ -46,21 +57,18 @@ class DeviceListActivity : AppCompatActivity(){
         Toast.makeText(applicationContext,
             R.string.yes, Toast.LENGTH_SHORT).show()
     }
-    val negativeButtonClick = { dialog: DialogInterface, which: Int ->
-        Toast.makeText(applicationContext,
-            R.string.no, Toast.LENGTH_SHORT).show()
-    }
-    val neutralButtonClick = { dialog: DialogInterface, which: Int ->
-        Toast.makeText(applicationContext,
-            "", Toast.LENGTH_SHORT).show()
-    }
 
-    override fun onCreate(savedInstanceState: Bundle?) {
+    override fun onCreate(savedInstanceState: Bundle?){
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_list_device)
 
+        loadingDialogue = Companion.LoadingDialogue(this)
+        loadingDialogue!!.startLoadingDialogue()
+
         //get GUI
         cvDevice = findViewById(R.id.cvDevice1)
+        cvDevice?.setOnClickListener(this)
+
         txtHardwareDeviceCode = findViewById<TextView>(R.id.HardwareDeviceCode)
         txtLockStatus = findViewById<TextView>(R.id.txtLockStatus)
 
@@ -71,11 +79,29 @@ class DeviceListActivity : AppCompatActivity(){
         txtLockStatus!!.text = "Locked"
         GetAeskey()
 
-        //set card view listener
-        cvDevice!!.setOnClickListener{
-            SetDevice()
-            ConnectDevice()
+
+        handler!!.postDelayed({
+            loadingDialogue!!.stopLoadingDialog()
+        }, 1000)
+    }
+
+    override fun onClick(v: View?) {
+        if (cvDevice?.id == v!!.id) {
+            CoroutineScope(Main).launch{
+                loadingDialogue!!.startLoadingDialogue()
+                SetAndConnectDevice().join()
+                loadingDialogue!!.stopLoadingDialog()
+            }
         }
+    }
+
+    private fun SetAndConnectDevice() = CoroutineScope(IO).launch {
+        SetDevice()
+        ConnectDevice()
+    }
+
+    override fun onStop() {
+        super.onStop()
     }
 
     fun ShowAlertDialogue(view: View, title: String, msg: String ){
@@ -92,11 +118,19 @@ class DeviceListActivity : AppCompatActivity(){
 
     override fun onResume() {
         super.onResume()
+    }
+
+    override fun onRestart() {
+        super.onRestart()
         if (isLocked==false){
             txtLockStatus!!.text = "Unlocked"
         }else{
             txtLockStatus!!.text = "Locked"
         }
+        loadingDialogue!!.startLoadingDialogue()
+        handler!!.postDelayed({
+            loadingDialogue!!.stopLoadingDialog()
+        }, 2000)
     }
 
     private fun GetAeskey() {
@@ -118,23 +152,25 @@ class DeviceListActivity : AppCompatActivity(){
     }
 
     private fun SetDevice() {
-
-        //set bluetooth device
+        isRunnning = true
+        Log.e("Set device", "Start")
         try {
             //initial bluetooth
             bleDevice = BleDevice()
             bleAccess = BleAccess(applicationContext)
 //            device = bluetoothAdapter.getRemoteDevice("")                               //this null device
-//            device = bluetoothAdapter.getRemoteDevice("07:6B:D7:16:B2:AD")              //this incorrect device code
-            device = bluetoothAdapter.getRemoteDevice(HardwareDeviceCode)                      //this correct device code
+            device = bluetoothAdapter.getRemoteDevice("07:6B:D7:16:B2:AD")              //this incorrect device code
+//            device = bluetoothAdapter.getRemoteDevice(HardwareDeviceCode)                      //this correct device code
             bleDevice!!._Device = device
             target = DiscoverEventArgs(bleAccess,bleDevice)
-
             //get ivkey for connect device
             GetDeviceIvkey()
+            Log.e("Set device", "Success")
         } catch (e: IllegalArgumentException) {
             ShowAlertDialogue(View(this), "Get device failed", e.message.toString() )
         } catch (e: BoxException) {
+            ShowAlertDialogue(View(this), "Get device failed", e.message.toString() )
+        } catch (e: java.lang.NullPointerException ) {
             ShowAlertDialogue(View(this), "Get device failed", e.message.toString() )
         }
     }
@@ -145,6 +181,7 @@ class DeviceListActivity : AppCompatActivity(){
     }
 
     private fun ConnectDevice() = try {
+        Log.e("Connect device", "Start")
         val token = byteArrayOf(
             0x01.toByte(), 0x00.toByte(), 0x00.toByte(), 0x00.toByte(),
             0x00.toByte(), 0x00.toByte(), 0x00.toByte(), 0x00.toByte(),
@@ -172,8 +209,8 @@ class DeviceListActivity : AppCompatActivity(){
         }
         target!!.box.Connect(cipheredToken, hashToken)
         setConfiguration()
-        //Toast.makeText(this, "The device ${HardwareDeviceCode} is connect" , Toast.LENGTH_SHORT).show()
         GoToDeviceLockUnlockPage()
+        Log.e("Connect device", "Success")
     } catch (e: BoxException) {
         ShowAlertDialogue(View(this), "Connect device failed", e.message.toString() )
     } catch (e: Exception) {
@@ -214,6 +251,7 @@ class DeviceListActivity : AppCompatActivity(){
                 hashConfig = Utility.ToInt32(hashConfigByte, 0)
                 target!!.box.SetConfiguration(cipheredBoxConfig, hashConfig);
                 autoLockTime = target!!.box.GetConfiguration()._autoCloseTime
+                isRunnning = false
             }
         } catch (e: BoxException){
             ShowAlertDialogue(View(this), "Set configuration failed", e.message.toString() )
