@@ -164,8 +164,8 @@ class DeviceListActivity : AppCompatActivity(), OnClickListener {
             bleDevice = BleDevice()
             bleAccess = BleAccess(applicationContext)
 //            device = bluetoothAdapter.getRemoteDevice("")                               //this null device
-            device = bluetoothAdapter.getRemoteDevice("07:6B:D7:16:B2:AD")              //this incorrect device code
-//            device = bluetoothAdapter.getRemoteDevice(HardwareDeviceCode)                      //this correct device code
+//            device = bluetoothAdapter.getRemoteDevice("07:6B:D7:16:B2:AD")              //this incorrect device code
+            device = bluetoothAdapter.getRemoteDevice(HardwareDeviceCode)                      //this correct device code
             bleDevice!!._Device = device
             target = DiscoverEventArgs(bleAccess,bleDevice)
             //get ivkey for connect device
