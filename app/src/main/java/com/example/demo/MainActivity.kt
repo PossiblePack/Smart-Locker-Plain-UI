@@ -14,6 +14,9 @@ import androidx.appcompat.app.AppCompatActivity
 import com.example.demo.libs.Model.BoxException
 import com.example.demo.libs.Model.DiscoverEventArgs
 import com.example.demo.libs.Model.Utility
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.security.MessageDigest
 import java.util.*
 import javax.crypto.Cipher
@@ -21,8 +24,6 @@ import javax.crypto.spec.IvParameterSpec
 import javax.crypto.spec.SecretKeySpec
 
 class MainActivity : AppCompatActivity() {
-
-    private var loadingDialogue: LoadingDialogue? = null
 
     companion object {
         var batteryStatus : Int? = null
@@ -278,12 +279,10 @@ class MainActivity : AppCompatActivity() {
             }
     }
 
-    private fun Disconnect() {
+    private fun Disconnect(){
             try {
                 target!!.box.Disconnect()
-//                Log.e("Locked status", target!!.box.IsLocked().toString())
                 Log.e("Device status", "Device is disconnected")
-                Toast.makeText(this, "The device is disconnected!" , Toast.LENGTH_SHORT).show()
             } catch (e: BoxException) {
                 Log.e("BoxException", e.message.toString())
                 ShowAlertDialogue(View(this), "Disconnect device failed", e.message.toString() )

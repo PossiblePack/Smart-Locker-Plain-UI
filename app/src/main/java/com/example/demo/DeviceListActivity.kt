@@ -1,6 +1,5 @@
 package com.example.demo
 
-import android.app.Activity
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothManager
@@ -37,7 +36,8 @@ import javax.crypto.spec.SecretKeySpec
 class DeviceListActivity : AppCompatActivity(), OnClickListener {
 
     private var loadingDialogue: Companion.LoadingDialogue? = null
-    private var activity: Activity? = null
+    var errorMSG: String? = null
+    var errorTag: String? = null
 
     //initial GUI variable
     private var txtHardwareDeviceCode: TextView? = null
@@ -52,10 +52,8 @@ class DeviceListActivity : AppCompatActivity(), OnClickListener {
         (getSystemService(BLUETOOTH_SERVICE) as BluetoothManager).adapter
     }
 
-    //initial
+    //initial alert Button
     val positiveButtonClick = { dialog: DialogInterface, which: Int ->
-        Toast.makeText(applicationContext,
-            R.string.yes, Toast.LENGTH_SHORT).show()
     }
 
     override fun onCreate(savedInstanceState: Bundle?){
@@ -79,29 +77,28 @@ class DeviceListActivity : AppCompatActivity(), OnClickListener {
         txtLockStatus!!.text = "Locked"
         GetAeskey()
 
-
         handler!!.postDelayed({
             loadingDialogue!!.stopLoadingDialog()
-        }, 1000)
+        }, 2000)
     }
 
     override fun onClick(v: View?) {
         if (cvDevice?.id == v!!.id) {
-            CoroutineScope(Main).launch{
-                loadingDialogue!!.startLoadingDialogue()
-                SetAndConnectDevice().join()
-                loadingDialogue!!.stopLoadingDialog()
-            }
+            SetAndConnectDevice()
         }
     }
 
-    private fun SetAndConnectDevice() = CoroutineScope(IO).launch {
-        SetDevice()
-        ConnectDevice()
-    }
-
-    override fun onStop() {
-        super.onStop()
+    private fun SetAndConnectDevice(){
+        CoroutineScope(Main).launch{
+            loadingDialogue!!.startLoadingDialogue()
+            SetDevice().join()
+            ConnectDevice().join()
+            loadingDialogue!!.stopLoadingDialog()
+            if (errorMSG != null){
+                ShowAlertDialogue(View(this@DeviceListActivity), errorTag!!, errorMSG!!)
+                ResetErrorTag()
+            }
+        }
     }
 
     fun ShowAlertDialogue(view: View, title: String, msg: String ){
@@ -116,8 +113,9 @@ class DeviceListActivity : AppCompatActivity(), OnClickListener {
         }
     }
 
-    override fun onResume() {
-        super.onResume()
+    private fun ResetErrorTag(){
+        errorTag = null
+        errorMSG = null
     }
 
     override fun onRestart() {
@@ -127,10 +125,18 @@ class DeviceListActivity : AppCompatActivity(), OnClickListener {
         }else{
             txtLockStatus!!.text = "Locked"
         }
-        loadingDialogue!!.startLoadingDialogue()
-        handler!!.postDelayed({
+        CoroutineScope(Main).launch {
+            loadingDialogue!!.startLoadingDialogue()
+            DeviceIsDisconnected().join()
+            ResetErrorTag()
             loadingDialogue!!.stopLoadingDialog()
-        }, 2000)
+        }
+    }
+
+    private fun DeviceIsDisconnected() = CoroutineScope(IO).launch{
+        delay(1000)
+        while (target!!.advdata != null){
+        }
     }
 
     private fun GetAeskey() {
@@ -151,8 +157,7 @@ class DeviceListActivity : AppCompatActivity(), OnClickListener {
         }
     }
 
-    private fun SetDevice() {
-        isRunnning = true
+    private fun SetDevice() = CoroutineScope(IO).launch{
         Log.e("Set device", "Start")
         try {
             //initial bluetooth
@@ -167,11 +172,17 @@ class DeviceListActivity : AppCompatActivity(), OnClickListener {
             GetDeviceIvkey()
             Log.e("Set device", "Success")
         } catch (e: IllegalArgumentException) {
-            ShowAlertDialogue(View(this), "Get device failed", e.message.toString() )
+            Log.e("Set device", "Not success")
+            errorTag = "Set device failed!"
+            errorMSG = e.message
         } catch (e: BoxException) {
-            ShowAlertDialogue(View(this), "Get device failed", e.message.toString() )
+            Log.e("Set device", "Not success")
+            errorTag = "Set device failed!"
+            errorMSG = e.message
         } catch (e: java.lang.NullPointerException ) {
-            ShowAlertDialogue(View(this), "Get device failed", e.message.toString() )
+            Log.e("Set device", "Not success")
+            errorTag = "Set device failed!"
+            errorMSG = e.message
         }
     }
 
@@ -180,44 +191,50 @@ class DeviceListActivity : AppCompatActivity(), OnClickListener {
         startActivity(intent)
     }
 
-    private fun ConnectDevice() = try {
-        Log.e("Connect device", "Start")
-        val token = byteArrayOf(
-            0x01.toByte(), 0x00.toByte(), 0x00.toByte(), 0x00.toByte(),
-            0x00.toByte(), 0x00.toByte(), 0x00.toByte(), 0x00.toByte(),
-            0xFF.toByte(), 0xFF.toByte(), 0xFF.toByte(), 0xFF.toByte(),
-            0x00.toByte(), 0x00.toByte(), 0x00.toByte(), 0x00.toByte()
-        )
-        var cipheredTmp = ByteArray(32)
-        val cipheredToken = ByteArray(16)
-        val hashTokenByte = ByteArray(4)
-        val iv = IvParameterSpec(mIvKey[0])
-        val key = SecretKeySpec(mAesKey[0], "AES")
-        val encrypter: Cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
-        encrypter.init(Cipher.ENCRYPT_MODE, key, iv)
-        cipheredTmp = encrypter.doFinal(token)
-        for (i in 0..15) {
-            cipheredToken[i] = cipheredTmp[i]
+    private fun ConnectDevice() = CoroutineScope(IO).launch{
+        try {
+            Log.e("Connect device", "Start")
+            val token = byteArrayOf(
+                0x01.toByte(), 0x00.toByte(), 0x00.toByte(), 0x00.toByte(),
+                0x00.toByte(), 0x00.toByte(), 0x00.toByte(), 0x00.toByte(),
+                0xFF.toByte(), 0xFF.toByte(), 0xFF.toByte(), 0xFF.toByte(),
+                0x00.toByte(), 0x00.toByte(), 0x00.toByte(), 0x00.toByte()
+            )
+            var cipheredTmp = ByteArray(32)
+            val cipheredToken = ByteArray(16)
+            val hashTokenByte = ByteArray(4)
+            val iv = IvParameterSpec(mIvKey[0])
+            val key = SecretKeySpec(mAesKey[0], "AES")
+            val encrypter: Cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
+            encrypter.init(Cipher.ENCRYPT_MODE, key, iv)
+            cipheredTmp = encrypter.doFinal(token)
+            for (i in 0..15) {
+                cipheredToken[i] = cipheredTmp[i]
+            }
+            val sha256 = MessageDigest.getInstance("SHA-256").digest(token)
+            for (i in 0..3) {
+                hashTokenByte[i] = sha256[28 + i]
+            }
+            var hashToken = 0
+            if (hashTokenByte != null) {
+                hashToken = Utility.ToInt32(hashTokenByte, 0)
+            }
+            target!!.box.Connect(cipheredToken, hashToken)
+            setConfiguration()
+            GoToDeviceLockUnlockPage()
+            Log.e("Connect device", "Success")
+        } catch (e: BoxException) {
+            Log.e("Connect device", "Not success")
+            errorTag = "Connect device failed!"
+            errorMSG = e.message
+        } catch (e: Exception) {
+            Log.e("Connect device", "Not success")
+            errorTag = "Connect device failed!"
+            errorMSG = e.message
         }
-        val sha256 = MessageDigest.getInstance("SHA-256").digest(token)
-        for (i in 0..3) {
-            hashTokenByte[i] = sha256[28 + i]
-        }
-        var hashToken = 0
-        if (hashTokenByte != null) {
-            hashToken = Utility.ToInt32(hashTokenByte, 0)
-        }
-        target!!.box.Connect(cipheredToken, hashToken)
-        setConfiguration()
-        GoToDeviceLockUnlockPage()
-        Log.e("Connect device", "Success")
-    } catch (e: BoxException) {
-        ShowAlertDialogue(View(this), "Connect device failed", e.message.toString() )
-    } catch (e: Exception) {
-        ShowAlertDialogue(View(this), "Connect device failed", e.message.toString() )
     }
 
-    private fun setConfiguration() {
+    private fun setConfiguration(){
         //set configuration
         var config: ByteArray? = byteArrayOf(
             0xFB.toByte(), 0x00.toByte(), 0x00.toByte(), 0x00.toByte(),     //interval=251
@@ -253,13 +270,17 @@ class DeviceListActivity : AppCompatActivity(), OnClickListener {
                 autoLockTime = target!!.box.GetConfiguration()._autoCloseTime
                 isRunnning = false
             }
+            Log.e("Set configuration", "Success")
         } catch (e: BoxException){
-            ShowAlertDialogue(View(this), "Set configuration failed", e.message.toString() )
+            Log.e("Set configuration", "Not success")
+            errorTag = "Set configuration failed!"
+            errorMSG = e.message
         } catch (e: java.lang.Exception){
-            ShowAlertDialogue(View(this), "Set configuration failed", e.message.toString() )
+            Log.e("Set configuration", "Not success")
+            errorTag = "Set configuration failed!"
+            errorMSG = e.message
         }
     }
-
 
     fun GetDeviceIvkey() {
         //Get IV Key
@@ -273,7 +294,6 @@ class DeviceListActivity : AppCompatActivity(), OnClickListener {
             }
             //add ivkey to array list
             mIvKey.add(ivkey)
-//            Toast.makeText(this, "Get IV key from device ${HardwareDeviceCode} is successfully" , Toast.LENGTH_SHORT).show()
         } catch (ex: java.lang.Exception) {
             ShowAlertDialogue(View(this), "Get IV key failed", ex.message.toString() )
         }
